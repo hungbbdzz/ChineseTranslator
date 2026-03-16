@@ -25,8 +25,8 @@ Yêu cầu: **Python 3.10+**
 
 1. Clone repository về máy:
    ```bash
-   git clone https://github.com/your-username/chinese-translator.git
-   cd chinese-translator
+   git clone https://github.com/hungbbdzz/ChineseTranslator.git
+   cd ChineseTranslator
    ```
 
 2. Cài đặt các thư viện phụ thuộc:
@@ -39,6 +39,9 @@ Yêu cầu: **Python 3.10+**
    python ChineseTranslator.py
    ```
    *(Hoặc chạy file `RunTranslator.bat` trên Windows)*
+
+> [!NOTE]
+> **Lần chạy đầu tiên:** Ứng dụng sẽ mất khoảng 1-2 phút để tải các mô hình dịch thuật ngoại tuyến (Argos Models) từ internet. Các lần chạy sau sẽ khởi động ngay lập tức.
 
 ## ⌨️ Phím Tắt Tiện Ích (Hotkeys)
 
@@ -55,9 +58,19 @@ Yêu cầu: **Python 3.10+**
 - `compat_patch.py`: Chứa các bản vá tương thích (compatibility patches) chống lỗi khi compile bằng PyInstaller.
 - `data/`: Thư mục chứa từ điển Hán Việt (`sinov_readings.csv`, `hanviet_pinyin.csv`).
 
+## ⚠️ Khắc phục sự cố (Troubleshooting)
+
+- **Lỗi không phát âm được (TTS Error):**
+  - Đảm bảo bạn có kết nối mạng để sử dụng giọng đọc Neural chất lượng cao. Nếu không, app sẽ dùng giọng đọc có sẵn của Windows.
+  - Hãy kiểm tra Windows của bạn đã cài đặt gói ngôn ngữ tiếng Trung (Chinese Language Pack) trong Settings > Time & Language.
+- **Dịch Online thỉnh thoảng hiện "Error" hoặc rỗng:**
+  - Google/Deep-Translator giới hạn số lượng request. Hãy đợi vài giây và thử lại.
+- **Lỗi khi cài đặt thư viện (`pip install`):**
+  - Đảm bảo bạn đang sử dụng Python bản 64-bit (phiên bản 3.10 đến 3.12 là ổn định nhất).
+
 ## ⚙️ Đóng gói thành `.exe` (Build)
 
-Bạn có thể đóng gói toàn bộ tool này thành 1 file `.exe` chạy độc lập bằng PyInstaller.
+Bạn có thể đóng gói toàn bộ tool này thành 1 file `.exe` độc lập không cần cài Python bằng PyInstaller.
 
 ```bash
 pip install pyinstaller
