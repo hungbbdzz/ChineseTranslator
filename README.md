@@ -1,5 +1,11 @@
 # 📖 Chinese to Vietnamese Translator
 
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?logo=python)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?logo=windows)
+![Stars](https://img.shields.io/github/stars/hungbbdzz/ChineseTranslator?style=social)
+
+> **💡 Mẹo:** Hãy chụp vài tấm ảnh màn hình lúc app đang chạy (Hiển thị giao diện chính, lúc OCR màn hình game) và dán đè thay vào dòng chữ này để người xem hiểu ngay app của bạn làm được gì nhé!
 A lightweight, hybrid (Offline + Online) Chinese to Vietnamese translation tool built with Python and Tkinter. This tool is optimized for reading Chinese materials, playing games (with a frozen-screen OCR feature), and quick lookups.
 
 It runs locally with high-quality TTS and fallback mechanisms, ensuring a seamless experience even without an internet connection.
