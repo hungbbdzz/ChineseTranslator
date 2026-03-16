@@ -5,8 +5,8 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?logo=windows)
 ![Stars](https://img.shields.io/github/stars/hungbbdzz/ChineseTranslator?style=social)
 
-> **💡 Mẹo:** Hãy chụp vài tấm ảnh màn hình lúc app đang chạy (Hiển thị giao diện chính, lúc OCR màn hình game) và dán đè thay vào dòng chữ này để người xem hiểu ngay app của bạn làm được gì nhé!
-A lightweight, hybrid (Offline + Online) Chinese to Vietnamese translation tool built with Python and Tkinter. This tool is optimized for reading Chinese materials, playing games (with a frozen-screen OCR feature), and quick lookups.
+<img width="635" height="615" alt="{1B6C6297-037D-4248-831F-EEEF3C63A497}" src="https://github.com/user-attachments/assets/5972dbaa-ed54-48da-b9f2-df82efebfa1f" />
+
 
 It runs locally with high-quality TTS and fallback mechanisms, ensuring a seamless experience even without an internet connection.
 
