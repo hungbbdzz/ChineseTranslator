@@ -1,9 +1,9 @@
 # 📖 Chinese to Vietnamese Translator
 
-![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?logo=python)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?logo=python)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/hungbbdzz/ChineseTranslator/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?logo=windows)
-![Stars](https://img.shields.io/github/stars/hungbbdzz/ChineseTranslator?style=social)
+[![Stars](https://img.shields.io/github/stars/hungbbdzz/ChineseTranslator?style=social)](https://github.com/hungbbdzz/ChineseTranslator/stargazers)
 
 <img width="635" height="615" alt="{1B6C6297-037D-4248-831F-EEEF3C63A497}" src="https://github.com/user-attachments/assets/5972dbaa-ed54-48da-b9f2-df82efebfa1f" />
 
