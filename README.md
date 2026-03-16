@@ -37,11 +37,20 @@ Yêu cầu: **Python 3.10+**
 3. Chạy ứng dụng:
    ```bash
    python ChineseTranslator.py
-   ```
-   *(Hoặc chạy file `RunTranslator.bat` trên Windows)*
-
 > [!NOTE]
 > **Lần chạy đầu tiên:** Ứng dụng sẽ mất khoảng 1-2 phút để tải các mô hình dịch thuật ngoại tuyến (Argos Models) từ internet. Các lần chạy sau sẽ khởi động ngay lập tức.
+
+## 🔄 Luồng Kiến Trúc Hoạt Động (Core Workflow)
+
+Dự án được thiết kế với tư duy tối ưu hóa tốc độ phản hồi (low-latency) kết hợp độ chính xác cao (accuracy fallback):
+
+1. **Trigger & Màn hình chờ (Screen Capture):** Người dùng kích hoạt chương trình bằng phím tắt toàn cục `Alt + X` hoặc `Ctrl + Shift + V`. App sẽ chụp và "đông cứng" ngay khung hình hiện tại trên màn hình hệ thống (kể cả game Fullscreen).
+2. **Tiền xử lý (Image Preprocessing):** Vùng chữ được cắt ra sẽ đi qua lớp xử lý của Pillow. App sẽ phân tích kích thước; nếu là vùng chữ chữ nhỏ (như sub game), ảnh được upscale lên 2x (Lanzcos), kích 1.6x độ tương phản và 1.4x độ nét.
+3. **Nhận diện (OCR Processing):** Ảnh tiền xử lý được đẩy vào engine `RapidOCR (ONNX)` (đã được cache sẵn trong RAM từ lúc khởi động). Quá trình xuất ra tiếng Trung mất chưa tới 0.1 giây.
+4. **Dịch thuật song song (Multi-threaded Translation Pipeline):**
+   - *Luồng 1 (Sync & Local):* Truy xuất CSDL `dict_data` cục bộ để tìm Pinyin và Hán Việt. Tiếp tục gọi mô hình `argostranslate` để dịch thô 1 bước `zh->vi` (hoặc `zh->en->vi`). Kết quả này được in ra màn hình **gần như ngay lập tức**.
+   - *Luồng 2 (Async & Online):* Tạo một thread chạy ngầm gửi request tới API `Google Translate` thông qua thư viện `deep-translator`. Khi API trả về kết quả mang ngữ cảnh tốt hơn, chữ trên màn hình giao diện tự động được update (có check icon báo hiệu 🌐).
+5. **Text-to-Speech (Fallback Mechanism):** Khi người dùng nhấn nút 🔊, hệ thống đẩy text vào hàng đợi lấy dữ liệu qua `edge-tts` (Microfot Neural Voices) cho giọng đọc mượt mà. Trong trường hợp rớt mạng, luồng `Catch (Exception)` sẽ đổi hướng dữ liệu chạy thẳng qua `pyttsx3` (SAPI5 offline).
 
 ## ⌨️ Phím Tắt Tiện Ích (Hotkeys)
 
