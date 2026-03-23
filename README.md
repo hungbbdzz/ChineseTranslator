@@ -20,6 +20,11 @@ It runs locally with high-quality TTS and fallback mechanisms, ensuring a seamle
 - **Dịch Hybrid (Ngoại Tuyến + Trực Tuyến):** 
   - Dịch **Offline ngay lập tức** bằng thư viện `argostranslate` (đảm bảo phản hồi nhanh, không độ trễ).
   - Tự động lấy kết quả từ **Google Translate API** để bổ sung ngữ cảnh chính xác ở chế độ nền.
+- **Gợi Ý Thông Minh & Điền Tự Động (Context-Aware Suggestions):** 
+  - Dự đoán từ vựng dựa trên lịch sử gõ và 10 nhóm ngữ cảnh thực tế (Mua sắm, Chào hỏi, Đi lại...).
+  - Tự động hiển thị các mẫu câu tình huống ngay khi ô nhập liệu trống.
+- **Bảng Viết Tay (Handwriting Pad):** Tích hợp bảng vẽ nhận diện nét chữ Hán trực tiếp, hỗ trợ cuộn và chọn dự đoán chữ cái chính xác.
+- **Tự Động Dịch (Auto-Translate Delay):** Ứng dụng tự động dịch văn bản ngay sau khi bạn dừng gõ 2 giây, giúp trải nghiệm rảnh tay và liền mạch.
 - **Đọc Phát Âm (Neural TTS):** Sử dụng **Microsoft Edge TTS** (`edge-tts`) cho giọng đọc tự nhiên (Hán & Việt). Nếu mất mạng, hệ thống tự động fallback về giọng đọc offline của Windows (`pyttsx3`).
 - **Từ Điển Mini:** Nhấp đúp chuột vào một ký tự tiếng Trung bất kỳ để tra bộ thủ, số nét, ví dụ từ ghép và câu mẫu.
 - **Smart Clipboard Monitor:** Tự động phát hiện khi bạn copy văn bản chứa tiếng Trung/Nhật/Hàn và hiển thị ngay bản dịch.
@@ -62,6 +67,7 @@ Dự án được thiết kế với tư duy tối ưu hóa tốc độ phản h
 
 - `Alt + X` : Chụp màn hình (đông cứng màn hình hiện tại) và quét OCR để dịch.
 - `Ctrl + Shift + V` : Dịch nhanh văn bản vừa Copy trong Clipboard.
+- `Shift + Click ✖ (Nút Close)` : Buộc ứng dụng tắt hoàn toàn ngay lập tức (bỏ qua thu nhỏ xuống khay hệ thống).
 - Hiển thị bảng từ điển khi **Nhấp Đúp (Double Click)** vào một chữ Hán (ở dòng input hoặc kết quả).
 
 ## 🛠️ Cấu Trúc Dự Án (Project Structure)
@@ -69,6 +75,8 @@ Dự án được thiết kế với tư duy tối ưu hóa tốc độ phản h
 - `ChineseTranslator.py`: Giao diện chính (GUI) và xử lý sự kiện (Tkinter, Hotkeys, Tray Icon).
 - `ocr_capture.py`: Mudule chụp màn hình và trích xuất văn bản (OCR) bằng `rapidocr-onnxruntime`. Hỗ trợ chế độ chụp frozen-screen.
 - `translator.py`: Module dịch chính, liên kết Pinyin, Hán Việt Offline và dịch đa tầng (Offline Argos / Online Deep-Translator).
+- `handwriting.py`: Cửa sổ bảng viết tay, xử lý bắt nét chuột và gọi API Google Handwriting.
+- `smart_suggestions.py`: Động cơ dự đoán từ và gợi ý câu giao tiếp thông minh dựa trên ngữ cảnh thực tế.
 - `dict_data.py`: Cơ sở dữ liệu cho từ điển mini (bộ thủ, từ ghép, ví dụ).
 - `compat_patch.py`: Chứa các bản vá tương thích (compatibility patches) chống lỗi khi compile bằng PyInstaller.
 - `data/`: Thư mục chứa từ điển Hán Việt (`sinov_readings.csv`, `hanviet_pinyin.csv`).
