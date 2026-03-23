@@ -5,8 +5,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?logo=windows)
 [![Stars](https://img.shields.io/github/stars/hungbbdzz/ChineseTranslator?style=social)](https://github.com/hungbbdzz/ChineseTranslator/stargazers)
 
-<img width="635" height="615" alt="{1B6C6297-037D-4248-831F-EEEF3C63A497}" src="https://github.com/user-attachments/assets/5972dbaa-ed54-48da-b9f2-df82efebfa1f" />
-
+<img width="634" height="732" alt="{C1B82B28-4D62-439E-82E7-5BEFCF1A3845}" src="https://github.com/user-attachments/assets/0ac3e4e1-47c5-4aa2-b82a-0ccad45965e8" />
 
 It runs locally with high-quality TTS and fallback mechanisms, ensuring a seamless experience even without an internet connection.
 
