@@ -25,6 +25,7 @@ import ctypes
 # Local modules
 from translator import translate_all, get_pinyin, get_hanviet, preload_resources
 from ocr_capture import capture_and_ocr, capture_frozen_and_ocr
+from handwriting import HandwritingWindow
 
 # Pre-load heavy resources in background immediately
 preload_resources()
@@ -1049,6 +1050,59 @@ class ChineseTranslatorApp:
             pass
         return 'break'
 
+    def _on_key_release(self, event):
+        # Ignore modifier keys and navigation
+        if getattr(event, 'keysym', '') in ['Shift_L', 'Shift_R', 'Control_L', 'Control_R', 'Alt_L', 'Alt_R', 'Up', 'Down', 'Left', 'Right', 'Return']:
+            return
+        self._schedule_auto_translate()
+
+    def _schedule_auto_translate(self):
+        if hasattr(self, '_auto_translate_id') and self._auto_translate_id is not None:
+            self.root.after_cancel(self._auto_translate_id)
+        self._auto_translate_id = self.root.after(2000, self._trigger_auto_translate)
+
+    def _trigger_auto_translate(self):
+        self._auto_translate_id = None
+        text = self.input_text.get('1.0', 'end').strip()
+        
+        if text:
+            try:
+                from smart_suggestions import get_contextual_suggestions
+                suggestions = get_contextual_suggestions(text)
+                self._update_suggestions(suggestions)
+            except Exception:
+                self._update_suggestions([])
+                
+            if self.history and self.history[-1].get('input') == text:
+                return
+            self._on_translate()
+        else:
+            self._update_suggestions([])
+
+    def _update_suggestions(self, suggestions):
+        if not suggestions:
+            if self.suggestions_frame.winfo_manager():
+                self.suggestions_frame.pack_forget()
+            return
+            
+        if not self.suggestions_frame.winfo_manager():
+            self.suggestions_frame.pack(fill='x', pady=(0, 10), before=self.action_frame)
+            
+        for i, btn in enumerate(self.sugg_buttons):
+            if i < len(suggestions):
+                display_text, append_text = suggestions[i]
+                btn.config(text=display_text, command=lambda a=append_text: self._insert_suggestion(a))
+                if not btn.winfo_manager():
+                    btn.pack(side='left', padx=3)
+            else:
+                if btn.winfo_manager():
+                    btn.pack_forget()
+                    
+    def _insert_suggestion(self, append_text):
+        self.input_text.insert('end', append_text)
+        self._check_empty_state()
+        self._schedule_auto_translate()
+
     def _check_empty_state(self):
         try:
             content = self.input_text.get('1.0', 'end').strip()
@@ -1105,6 +1159,17 @@ class ChineseTranslatorApp:
         self.input_text.pack(fill='x')
         self.input_text.bind('<Return>', lambda e: self._on_translate())
         self.input_text.bind('<Double-Button-1>', self._force_paste_and_translate)
+        
+        # Clear Button (X)
+        self.clear_input_btn = tk.Button(self.input_text, text="✖", font=('Segoe UI', 10),
+                                         bg=self.colors['surface'], fg=self.colors['fg'],
+                                         relief='flat', cursor='hand2', borderwidth=0,
+                                         command=lambda: [self.input_text.delete('1.0', 'end'), self._check_empty_state(), self._update_suggestions([], "")])
+        self.clear_input_btn.place(relx=1.0, rely=0.0, anchor='ne', x=-5, y=5)
+        
+        # Auto-translate feature
+        self._auto_translate_id = None
+        self.input_text.bind('<KeyRelease>', self._on_key_release)
 
         # Paste Button (Centered) - Uses Subtle Style
         self.paste_btn = ttk.Button(self.input_text, text="📋 Nhấp để Dán", 
@@ -1118,32 +1183,50 @@ class ChineseTranslatorApp:
         # Place relative to input_text
         self.speak_btn.place(in_=self.input_text, relx=1.0, rely=1.0, anchor='se', x=-2, y=-2)
         
+        # Suggestions Frame (Gợi ý)
+        self.suggestions_frame = ttk.Frame(main_frame)
+        ttk.Label(self.suggestions_frame, text="💡 Gợi ý:", font=('Segoe UI', 9, 'bold'), foreground=self.colors['yellow']).pack(side='left', padx=(0, 5))
+        self.sugg_buttons = []
+        for i in range(7):
+            btn = tk.Button(self.suggestions_frame, text="", font=('Microsoft YaHei', 11),
+                           bg=self.colors['surface'], fg=self.colors['accent2'],
+                           relief='flat', cursor='hand2', borderwidth=0)
+            btn.pack(side='left', padx=2)
+            # Hover effect
+            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg=self.colors['surface2']))
+            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg=self.colors['surface']))
+            self.sugg_buttons.append(btn)
+        
         # Actions Row
-        action_frame = ttk.Frame(main_frame)
-        action_frame.pack(fill='x', pady=(0, 15))
+        self.action_frame = ttk.Frame(main_frame)
+        self.action_frame.pack(fill='x', pady=(0, 15))
         
         # History Navigation Buttons
-        self.back_btn = ttk.Button(action_frame, text="⬅️", width=3,
-                                  command=lambda: self.navigate_history(-1))
+        self.back_btn = ttk.Button(self.action_frame, text="⬅️", width=3,
+                                      command=lambda: self.navigate_history(-1))
         self.back_btn.pack(side='left', padx=(0, 5))
         
-        self.forward_btn = ttk.Button(action_frame, text="➡️", width=3,
+        self.forward_btn = ttk.Button(self.action_frame, text="➡️", width=3,
                                      command=lambda: self.navigate_history(1))
         self.forward_btn.pack(side='left', padx=(0, 5))
         
         # History List Button
-        self.history_btn = ttk.Button(action_frame, text="📜", width=3,
+        self.history_btn = ttk.Button(self.action_frame, text="📜", width=3,
                                      command=self._open_history_list)
         self.history_btn.pack(side='left', padx=(0, 10))
         
         # Initial button state
         self._update_nav_buttons()
         
-        self.translate_btn = ttk.Button(action_frame, text="🔄 Dịch Ngay", 
+        self.translate_btn = ttk.Button(self.action_frame, text="🔄 Dịch Ngay", 
                                         command=self._on_translate, style='Accent.TButton')
         self.translate_btn.pack(side='left', padx=(0, 10))
         
-        self.capture_btn = ttk.Button(action_frame, text="📸 Alt+X: Chụp & Dịch",
+        self.handwriting_btn = ttk.Button(self.action_frame, text="✍️ Viết Tay",
+                                         command=self._open_handwriting)
+        self.handwriting_btn.pack(side='left', padx=(0, 10))
+        
+        self.capture_btn = ttk.Button(self.action_frame, text="📸 Alt+X: Chụp & Dịch",
                                      command=self._on_capture)
         self.capture_btn.pack(side='left')
         
@@ -1185,8 +1268,15 @@ class ChineseTranslatorApp:
         canvas.pack(side="left", fill="both", expand=True)
 
         # Mousewheel scrolling
+        # Mousewheel scrolling
         def _on_mousewheel(event):
-             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            try:
+                bbox = canvas.bbox("all")
+                if not bbox: return
+                if bbox[3] - bbox[1] > canvas.winfo_height():
+                    canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            except:
+                pass
         
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
@@ -1202,10 +1292,24 @@ class ChineseTranslatorApp:
         import queue
         self.tts_queue = queue.Queue()
         threading.Thread(target=self._tts_worker, daemon=True).start()
+        
+        if self.input_text.get('1.0', 'end').strip():
+            self._schedule_auto_translate()
             
-        self.debounce_timer = None
-        # Bind auto-translate
-        self.input_text.bind('<KeyRelease>', self._on_input_change)
+    def _insert_handwriting_char(self, char):
+        try:
+            sel_first = self.input_text.index("sel.first")
+            sel_last = self.input_text.index("sel.last")
+            self.input_text.delete(sel_first, sel_last)
+        except tk.TclError:
+            pass
+            
+        self.input_text.insert(tk.INSERT, char)
+        self._check_empty_state()
+        self._schedule_auto_translate()
+        
+    def _open_handwriting(self):
+        HandwritingWindow(self.root, self.colors, self._insert_handwriting_char)
 
     def _clear_input(self):
         """Clear input text"""
@@ -1451,8 +1555,30 @@ class ChineseTranslatorApp:
         self.root.focus_force()
 
     def _hide_window(self):
-        """Minimizeto tray"""
-        self.root.withdraw()
+        """Minimize to tray, or exit completely if Shift is held"""
+        import ctypes
+        # VK_SHIFT is 0x10
+        if ctypes.windll.user32.GetAsyncKeyState(0x10) & 0x8000:
+            # Shift is held, close the app instantly
+            self.root.withdraw()
+            self.root.update()
+            
+            if hasattr(self, 'tray_icon'):
+                try:
+                    self.tray_icon.visible = False
+                    self.tray_icon.stop()
+                except Exception:
+                    pass
+            
+            try:
+                self.root.destroy()
+            except:
+                pass
+                
+            import os
+            os._exit(0)
+        else:
+            self.root.withdraw()
 
 
 
