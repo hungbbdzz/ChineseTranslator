@@ -3,6 +3,10 @@ from tkinter import ttk
 import threading
 import requests
 import time
+from logger_utils import get_logger
+
+# Set up logging
+logger = get_logger(__name__)
 
 class HandwritingWindow:
     def __init__(self, parent, colors, on_char_selected):
@@ -231,10 +235,11 @@ class HandwritingWindow:
                         "language": "zh-CN"
                     }]
                 }
-                
+
                 resp = requests.post(url, headers=headers, json=payload, timeout=5)
+                resp.raise_for_status()  # Raise exception for HTTP errors
                 data = resp.json()
-                
+
                 if data[0] == "SUCCESS":
                     predictions = data[1][0][1]
                     # Update UI in main thread
@@ -242,10 +247,21 @@ class HandwritingWindow:
                         self.window.after(0, self._update_predictions, predictions)
                         self.window.after(0, self.status_var.set, "Đã nhận dạng")
                 else:
+                    logger.warning(f"Handwriting recognition failed: {data}")
                     if self.window.winfo_exists():
                         self.window.after(0, self.status_var.set, "Lỗi từ API")
+            except requests.exceptions.Timeout:
+                logger.warning("Handwriting recognition timeout")
+                if self.window.winfo_exists():
+                    self.window.after(0, self.status_var.set, "Timeout")
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Handwriting recognition error: {e}")
+                if self.window.winfo_exists():
+                    self.window.after(0, self.status_var.set, "Lỗi kết nối")
             except Exception as e:
-                pass # Ignore connection errors silently to not spam
+                logger.exception(f"Unexpected error in handwriting recognition: {e}")
+                if self.window.winfo_exists():
+                    self.window.after(0, self.status_var.set, "Lỗi")
                 
         threading.Thread(target=worker, daemon=True).start()
         

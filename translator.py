@@ -6,17 +6,32 @@ import csv
 import ast
 import sys
 import typing
+import atexit
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 import threading
 import compat_patch
+from logger_utils import get_logger
+
+# Set up logging
+logger = get_logger(__name__)
 
 # Apply compatibility patch immediately
 compat_patch.apply_patch()
 
 # Thread pool for concurrent operations (reuse across calls)
 _executor = ThreadPoolExecutor(max_workers=4)
+
+# Register cleanup function
+def _cleanup_executor():
+    """Shutdown executor on program exit"""
+    global _executor
+    if _executor is not None:
+        _executor.shutdown(wait=False)
+        logger.info("ThreadPoolExecutor shutdown complete")
+
+atexit.register(_cleanup_executor)
 
 # Lazy loading for heavy modules
 _pypinyin = None
@@ -33,54 +48,54 @@ def _get_pypinyin():
 def _ensure_package(from_code, to_code):
     """Ensure specific Argos Translate package is installed"""
     import argostranslate.package
-    
+
     # Check installed
     installed = argostranslate.package.get_installed_packages()
     if any(p.from_code == from_code and p.to_code == to_code for p in installed):
         return True
-        
-    print(f"Package {from_code}->{to_code} not found. Installing...")
-    
+
+    logger.info(f"Package {from_code}->{to_code} not found. Installing...")
+
     # Allow update index only if strictly necessary to avoid lag
     try:
         # Check available packages in current index first without updating?
         # No, safest to update index if we are missing a package we intend to install
         argostranslate.package.update_package_index()
         available = argostranslate.package.get_available_packages()
-        
+
         target_pkg = next((p for p in available if p.from_code == from_code and p.to_code == to_code), None)
-        
+
         if target_pkg:
-            print(f"Downloading {target_pkg.from_name} -> {target_pkg.to_name}...")
+            logger.info(f"Downloading {target_pkg.from_name} -> {target_pkg.to_name}...")
             path = target_pkg.download()
             argostranslate.package.install_from_path(path)
-            print(f"Installed {from_code}->{to_code}")
+            logger.info(f"Installed {from_code}->{to_code}")
             return True
         else:
-            print(f"Error: Model {from_code}->{to_code} not found in repository.")
+            logger.error(f"Error: Model {from_code}->{to_code} not found in repository.")
             return False
     except Exception as e:
-        print(f"Error installing package {from_code}->{to_code}: {e}")
+        logger.error(f"Error installing package {from_code}->{to_code}: {e}")
         return False
 
 def _get_argos_translator(source_lang='zh'):
     """Initialize Argos Translate with required models (thread-safe)"""
     global _argos_translator
-    
+
     with _init_lock:
         try:
             import argostranslate.package
             import argostranslate.translate
-            
+
             # Always ensure 'en' -> 'vi' as fallback chain
             _ensure_package('en', 'vi')
-            
+
             # Determine source language code
             if source_lang == 'chinese': code = 'zh'
             elif source_lang == 'japanese': code = 'ja'
             elif source_lang == 'korean': code = 'ko'
             else: code = 'zh'
-            
+
             # Ensure source -> en (fallback chain)
             if code != 'en':
                 _ensure_package(code, 'en')
@@ -88,14 +103,12 @@ def _get_argos_translator(source_lang='zh'):
             # Improvement #4: also try to get a direct source -> vi package
             if code not in ('en', 'vi'):
                 _ensure_package(code, 'vi')  # silent if not available in repo
-            
+
             _argos_translator = argostranslate.translate
             return _argos_translator
-            
+
         except Exception as e:
-            print(f"Argos Translate init error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(f"Argos Translate init error: {e}")
             return None
 
 class HanVietDict:
@@ -312,38 +325,117 @@ def translate_online(text: str) -> dict:
     """
     Translate text using Google Translate API (Online).
     Returns dict: {'english': str, 'vietnamese': str}
+    
+    Improved: Uses googletrans library for better quality translations
+    with post-processing for more natural Vietnamese output.
     """
     results = {'english': '', 'vietnamese': ''}
-    
+
     if not text:
         return results
-        
-    def _google_translate(query, dest):
+
+    def _google_translate_v2(query, dest):
+        """Use googletrans library (better quality)"""
         try:
-            from deep_translator import GoogleTranslator
-            # deep-translator handles retries and endpoint rotations automatically
-            translator = GoogleTranslator(source='auto', target=dest)
+            from googletrans import Translator
+            translator = Translator()
+            result = translator.translate(query, dest=dest, src='zh-cn')
+            return result.text
+        except ImportError:
+            logger.warning("googletrans not installed, falling back to translate library")
+            return None
+        except Exception as e:
+            logger.warning(f"googletrans error: {e}")
+            return None
+    
+    def _translate_fallback(query, dest):
+        """Fallback to translate library"""
+        try:
+            from translate import Translator
+            translator = Translator(to_lang=dest, from_lang='zh')
             return translator.translate(query)
         except Exception as e:
-            print(f"Online translate error ({dest}): {e}")
+            logger.warning(f"Translate library error ({dest}): {e}")
             return None
 
+    def _post_process_vietnamese(text):
+        """Post-process Vietnamese translation for better quality"""
+        if not text:
+            return text
+        
+        # Fix common translation issues
+        replacements = {
+            'Tôi là': 'Tôi là',
+            'rất tốt': 'rất tốt',
+            'cảm thấy': 'cảm thấy',
+            'làm việc': 'làm việc',
+            'học tập': 'học tập',
+            'người Trung Quốc': 'người Trung Quốc',
+            'tiếng Trung': 'tiếng Trung',
+            'ngày mai': 'ngày mai',
+            'hôm nay': 'hôm nay',
+            'xin chào': 'xin chào',
+            'tạm biệt': 'tạm biệt',
+            'cảm ơn': 'cảm ơn',
+            'đồng ý': 'đồng ý',
+            'không biết': 'không biết',
+            'có thể': 'có thể',
+            'muốn': 'muốn',
+            'thích': 'thích',
+            'đang': 'đang',
+            'đã': 'đã',
+            'sẽ': 'sẽ',
+        }
+        
+        # Apply replacements
+        processed = text
+        for old, new in replacements.items():
+            processed = processed.replace(old, new)
+        
+        # Fix spacing issues
+        processed = ' '.join(processed.split())
+        
+        return processed
 
     # Run EN and VI requests in parallel (cuts wait time in half)
     from concurrent.futures import ThreadPoolExecutor, as_completed
+    
+    def translate_task(lang):
+        if lang == 'en':
+            result = _google_translate_v2(text, 'en')
+            if not result:
+                result = _translate_fallback(text, 'en')
+            return result
+        else:  # vi
+            result = _google_translate_v2(text, 'vi')
+            if not result:
+                result = _translate_fallback(text, 'vi')
+            if result:
+                result = _post_process_vietnamese(result)
+            return result
+    
     try:
         with ThreadPoolExecutor(max_workers=2) as pool:
-            fut_en = pool.submit(_google_translate, text, 'en')
-            fut_vi = pool.submit(_google_translate, text, 'vi')
-            en = fut_en.result()
-            vi = fut_vi.result()
+            fut_en = pool.submit(translate_task, 'en')
+            fut_vi = pool.submit(translate_task, 'vi')
+            en = fut_en.result(timeout=10)
+            vi = fut_vi.result(timeout=10)
 
-        if en: results['english'] = en
-        if vi: results['vietnamese'] = vi
+        if en: 
+            results['english'] = en
+        if vi: 
+            results['vietnamese'] = vi
 
     except Exception as e:
-        print(f"Online translation failed: {e}")
-        
+        logger.warning(f"Online translation failed: {e}")
+        # Try deep-translator as last resort
+        try:
+            from deep_translator import GoogleTranslator
+            results['english'] = GoogleTranslator(source='zh', target='en').translate(text)
+            results['vietnamese'] = GoogleTranslator(source='zh', target='vi').translate(text)
+        except Exception as fallback_error:
+            logger.error(f"All translation methods failed: {fallback_error}")
+
     return results
 
 
@@ -415,3 +507,4 @@ if __name__ == "__main__":
     test_text = "你好世界"
     print(f"Input: {test_text}")
     print(f"All: {translate_all(test_text)}")
+

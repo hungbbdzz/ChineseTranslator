@@ -9,6 +9,11 @@ from PIL import Image, ImageGrab, ImageTk, ImageEnhance
 import threading
 import os
 import shutil
+import atexit
+from logger_utils import get_logger
+
+# Set up logging
+logger = get_logger(__name__)
 
 # Lazy load pytesseract
 _pytesseract = None
