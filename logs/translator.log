@@ -12,3 +12,419 @@
 2026-03-24 21:17:34 - translator - ERROR - Error: Model zh->vi not found in repository.
 2026-03-24 21:17:38 - translator - INFO - Package zh->vi not found. Installing...
 2026-03-24 21:17:38 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 06:39:42 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 06:39:46 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 08:59:33 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 08:59:34 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 08:59:37 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 08:59:37 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 08:59:37 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 08:59:37 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:03 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:00:04 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:00:04 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:04 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:04 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:04 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:14 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:14 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:14 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:14 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:15 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:15 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:15 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:15 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:16 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:16 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:16 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:16 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:16 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:16 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:16 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:16 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:00:20 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:00:20 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:00:21 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:21 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:00:21 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:00:21 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:01:03 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:01:03 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:01:04 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:04 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:04 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:01:04 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:01:31 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:01:31 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:01:31 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:31 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:31 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:01:31 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:01:38 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:01:38 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:01:38 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:38 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:38 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:01:38 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:01:58 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:01:58 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:01:59 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:59 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:01:59 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:01:59 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:06:51 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:06:51 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:06:51 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:06:51 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:06:51 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:06:51 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:07:01 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:07:01 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:07:01 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:07:01 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:07:01 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:07:01 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 09:07:08 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 09:07:08 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 09:07:09 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:07:09 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 09:07:09 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 09:07:09 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 13:23:31 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 13:23:31 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 14:18:50 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 14:18:50 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 14:41:36 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 14:41:36 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 16:56:04 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 19:01:58 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 19:01:58 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 19:59:55 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 19:59:55 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 19:59:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 19:59:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 19:59:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 19:59:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 20:00:21 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 20:00:22 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 20:00:22 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 20:00:22 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 20:00:22 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 20:00:22 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:34:28 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:34:28 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:34:28 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:28 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:28 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:34:28 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:34:37 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:34:37 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:34:37 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:37 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:37 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:34:37 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:34:43 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:34:43 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:34:44 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:44 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:44 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:34:44 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:34:53 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:34:53 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:34:54 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:54 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:34:54 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:34:54 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:35:07 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:35:07 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:35:07 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:07 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:35:07 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:07 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:35:17 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:35:18 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:35:18 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:18 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:18 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:35:18 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:35:27 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:35:27 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:35:27 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:27 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:35:27 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:35:27 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:08 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:36:44 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:36:44 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:36:44 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:36:45 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:36:47 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:47 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:47 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:47 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:57 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:57 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:57 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:57 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:36:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:37:00 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:37:01 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:37:01 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:01 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:01 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:37:01 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:37:06 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:37:07 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:37:07 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:07 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:07 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:37:07 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:37:15 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:37:15 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:37:15 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:15 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:37:15 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:37:15 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:38:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:38:58 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:38:58 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:38:58 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:38:58 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:45:57 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:45:57 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:45:57 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:45:57 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:45:57 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:47:12 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:49:08 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:49:08 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:49:08 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:49:08 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:49:08 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:50:18 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:50:18 - translator - WARNING - googletrans not installed, falling back to translate library
+2026-03-25 22:50:18 - translator - WARNING - Translate library error (en): No module named 'translate'
+2026-03-25 22:50:18 - translator - WARNING - Translate library error (vi): No module named 'translate'
+2026-03-25 22:50:18 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:53:11 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:54:37 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:54:37 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:54:56 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:54:56 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:57:18 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:58:48 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 22:59:12 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:59:12 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 22:59:23 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 22:59:24 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 23:00:10 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 23:00:10 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 23:00:19 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 23:00:19 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 23:00:35 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 23:00:35 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 23:14:29 - translator - INFO - Package zh->vi not found. Installing...
+2026-03-25 23:14:29 - translator - ERROR - Error: Model zh->vi not found in repository.
+2026-03-25 23:18:37 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:18:37 - translator - ERROR - Hugging Face translator init error: "Unknown task translation, available tasks are ['any-to-any', 'audio-classification', 'automatic-speech-recognition', 'depth-estimation', 'document-question-answering', 'feature-extraction', 'fill-mask', 'image-classification', 'image-feature-extraction', 'image-segmentation', 'image-text-to-text', 'keypoint-matching', 'mask-generation', 'ner', 'object-detection', 'sentiment-analysis', 'table-question-answering', 'text-classification', 'text-generation', 'text-to-audio', 'text-to-speech', 'token-classification', 'video-classification', 'zero-shot-audio-classification', 'zero-shot-classification', 'zero-shot-image-classification', 'zero-shot-object-detection']"
+Traceback (most recent call last):
+  File "c:\Users\hunga\Documents\Coder\CNTranslator\translator.py", line 60, in _get_hf_translator
+    _hf_translator = pipeline(
+                     ^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\pipelines\__init__.py", line 742, in pipeline
+    normalized_task, targeted_task, task_options = check_task(task)
+                                                   ^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\pipelines\__init__.py", line 355, in check_task
+    return PIPELINE_REGISTRY.check_task(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\pipelines\base.py", line 1341, in check_task
+    raise KeyError(f"Unknown task {task}, available tasks are {self.get_supported_tasks()}")
+KeyError: "Unknown task translation, available tasks are ['any-to-any', 'audio-classification', 'automatic-speech-recognition', 'depth-estimation', 'document-question-answering', 'feature-extraction', 'fill-mask', 'image-classification', 'image-feature-extraction', 'image-segmentation', 'image-text-to-text', 'keypoint-matching', 'mask-generation', 'ner', 'object-detection', 'sentiment-analysis', 'table-question-answering', 'text-classification', 'text-generation', 'text-to-audio', 'text-to-speech', 'token-classification', 'video-classification', 'zero-shot-audio-classification', 'zero-shot-classification', 'zero-shot-image-classification', 'zero-shot-object-detection']"
+2026-03-25 23:18:37 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:19:29 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:20:15 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:20:15 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:20:51 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:21:18 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:21:22 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:21:22 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:21:22 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:21:22 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:21:23 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:21:23 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:21:23 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:22:31 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:22:35 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:22:36 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:22:53 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:23:35 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:23:43 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:23:57 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:24:08 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:24:20 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:27:26 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:30:09 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:30:13 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:30:13 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:32:25 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:32:29 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:33:25 - translator - INFO - [Translate] HF Direct zh->vi used
+2026-03-25 23:36:48 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:36:53 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:36:53 - translator - INFO - [Translate] HF Direct zh->vi used (input_tokens=4)
+2026-03-25 23:36:53 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:37:05 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:37:09 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:37:10 - translator - INFO - [Translate] HF Direct zh->vi used (input_tokens=23)
+2026-03-25 23:37:10 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:38:38 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-25 23:39:00 - translator - INFO - Loading Hugging Face model: Helsinki-NLP/opus-mt-zh-vi...
+2026-03-25 23:39:06 - translator - INFO - Hugging Face model loaded successfully!
+2026-03-25 23:39:06 - translator - INFO - [Translate] HF Direct zh->vi used (input_tokens=25)
+2026-03-25 23:39:36 - translator - INFO - [Translate] HF Direct zh->vi used (input_tokens=23)
+2026-03-25 23:39:54 - translator - INFO - [Translate] HF Direct zh->vi used (input_tokens=14)
+2026-03-25 23:42:19 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-25 23:51:15 - translator - INFO - Loading M2M100 model: facebook/m2m100_418M...
+2026-03-25 23:53:34 - translator - INFO - M2M100 model loaded successfully!
+2026-03-25 23:53:36 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=19)
+2026-03-25 23:54:22 - translator - INFO - Loading M2M100 model: facebook/m2m100_418M...
+2026-03-25 23:54:26 - translator - INFO - M2M100 model loaded successfully!
+2026-03-25 23:54:28 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=35)
+2026-03-25 23:54:28 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=4)
+2026-03-25 23:54:28 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=5)
+2026-03-25 23:58:44 - translator - INFO - Loading M2M100 model: facebook/m2m100_418M...
+2026-03-25 23:58:48 - translator - INFO - M2M100 model loaded successfully!
+2026-03-25 23:59:10 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=13)
+2026-03-25 23:59:44 - translator - INFO - [Translate] M2M100 Direct zh->vi used (input_tokens=12)
+2026-03-26 00:04:29 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:07:21 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:07:40 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:07:45 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:07:45 - translator - ERROR - NLLB Translation error: TokenizersBackend has no attribute lang_code_to_id
+Traceback (most recent call last):
+  File "c:\Users\hunga\Documents\Coder\CNTranslator\translator.py", line 279, in get_translations
+    forced_bos_token_id=tokenizer.lang_code_to_id[tgt_lang],
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\tokenization_utils_base.py", line 1293, in __getattr__
+    raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
+AttributeError: TokenizersBackend has no attribute lang_code_to_id
+2026-03-26 00:07:45 - translator - ERROR - NLLB Translation error: TokenizersBackend has no attribute lang_code_to_id
+Traceback (most recent call last):
+  File "c:\Users\hunga\Documents\Coder\CNTranslator\translator.py", line 279, in get_translations
+    forced_bos_token_id=tokenizer.lang_code_to_id[tgt_lang],
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\tokenization_utils_base.py", line 1293, in __getattr__
+    raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
+AttributeError: TokenizersBackend has no attribute lang_code_to_id
+2026-03-26 00:09:10 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:09:15 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:09:17 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=22)
+2026-03-26 00:11:31 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:11:38 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:11:38 - translator - ERROR - NLLB Translation error: The following `model_kwargs` are not used by the model: ['tgt_lang'] (note: typos in the generate arguments will also show up in this list)
+Traceback (most recent call last):
+  File "c:\Users\hunga\Documents\Coder\CNTranslator\translator.py", line 277, in get_translations
+    outputs = model.generate(
+              ^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\generation\utils.py", line 2352, in generate
+    self._validate_model_kwargs(model_kwargs.copy())
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\generation\utils.py", line 1541, in _validate_model_kwargs
+    raise ValueError(
+ValueError: The following `model_kwargs` are not used by the model: ['tgt_lang'] (note: typos in the generate arguments will also show up in this list)
+2026-03-26 00:13:13 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:13:20 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:13:20 - translator - ERROR - NLLB Translation error: TokenizersBackend has no attribute additional_special_tokens
+Traceback (most recent call last):
+  File "c:\Users\hunga\Documents\Coder\CNTranslator\translator.py", line 277, in get_translations
+    special_tokens = tokenizer.additional_special_tokens
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hunga\AppData\Local\Programs\Python\Python312\Lib\site-packages\transformers\tokenization_utils_base.py", line 1293, in __getattr__
+    raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
+AttributeError: TokenizersBackend has no attribute additional_special_tokens. Did you mean: 'add_special_tokens'?
+2026-03-26 00:15:31 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:15:38 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:15:40 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=22)
+2026-03-26 00:16:40 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 00:16:45 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 00:16:46 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=3)
+2026-03-26 00:16:47 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=4)
+2026-03-26 00:16:47 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=3)
+2026-03-26 00:17:55 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 07:31:30 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 07:31:58 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 08:08:19 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=5)
+2026-03-26 09:33:29 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 09:33:58 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 11:05:33 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 11:05:56 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 12:56:54 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 12:57:27 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 17:05:06 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 17:05:22 - translator - INFO - NLLB model loaded successfully!
+2026-03-26 18:00:52 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=19)
+2026-03-26 18:00:53 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=9)
+2026-03-26 18:01:10 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=8)
+2026-03-26 19:21:55 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-26 19:22:21 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 07:14:32 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 07:14:58 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 07:33:43 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 07:34:10 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 09:58:56 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=8)
+2026-03-27 10:12:02 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=13)
+2026-03-27 10:12:09 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=4)
+2026-03-27 11:32:19 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 11:32:47 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 19:33:12 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 19:33:41 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 21:55:16 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=5)
+2026-03-27 21:55:32 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=5)
+2026-03-27 21:55:53 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=4)
+2026-03-27 21:56:10 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=5)
+2026-03-27 22:12:41 - translator - INFO - [Translate] NLLB Direct zh->vi used (input_tokens=5)
+2026-03-27 22:39:31 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:39:41 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 22:43:57 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-27 22:44:54 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:44:59 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 22:50:17 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:50:21 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 22:50:23 - translator - INFO - ThreadPoolExecutor shutdown complete
+2026-03-27 22:52:02 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:52:05 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 22:53:57 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:54:01 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 22:57:44 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 22:57:47 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 23:00:21 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 23:00:25 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 23:03:29 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 23:03:33 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 23:15:31 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 23:15:35 - translator - INFO - NLLB model loaded successfully!
+2026-03-27 23:49:16 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-27 23:49:19 - translator - INFO - NLLB model loaded successfully!
+2026-03-28 00:06:33 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-28 00:06:37 - translator - INFO - NLLB model loaded successfully!
+2026-03-28 07:02:41 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-28 07:03:09 - translator - INFO - NLLB model loaded successfully!
+2026-03-28 08:14:17 - translator - INFO - Loading NLLB model: facebook/nllb-200-distilled-600M...
+2026-03-28 08:14:26 - translator - INFO - NLLB model loaded successfully!

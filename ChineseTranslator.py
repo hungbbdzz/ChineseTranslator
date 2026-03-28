@@ -23,9 +23,10 @@ import threading
 import ctypes
 
 # Local modules
-from translator import translate_all, get_pinyin, get_hanviet, preload_resources
+from translator import translate_all, get_pinyin, get_hanviet, preload_resources, detect_input_language, translate_to_chinese
 from ocr_capture import capture_and_ocr, capture_frozen_and_ocr
 from handwriting import HandwritingWindow
+from i18n import t, set_language, get_language
 
 # Pre-load heavy resources in background immediately
 preload_resources()
@@ -45,7 +46,7 @@ except Exception:
 class ChineseTranslatorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("📖 Dịch Tiếng Trung")
+        self.root.title(t('app_title'))
         self.root.geometry("650x700")
         self.root.minsize(650, 600)
         self.root.configure(bg='#1e1e2e')
@@ -60,9 +61,14 @@ class ChineseTranslatorApp:
             "show_english": True,
             "show_vietnamese": True,
             "clipboard_monitor": False,
-            "quick_translate": True
+            "quick_translate": True,
+            "translation_mode": "offline",  # "offline" (HF) or "online" (Google)
+            "app_language": "vi"             # UI language: "vi" | "en"
         }
         self.load_config()
+        
+        # Apply language from config immediately
+        set_language(self.config.get('app_language', 'vi'))
         
         # Translation History
         self.history = []           # List of translation records
@@ -92,6 +98,7 @@ class ChineseTranslatorApp:
         # Clipboard Monitor Variables (must be before _build_ui)
         self.clipboard_monitor_var = tk.BooleanVar(value=self.config.get('clipboard_monitor', False))
         self.quick_translate_var = tk.BooleanVar(value=self.config.get('quick_translate', True))
+        self.translation_mode_var = tk.StringVar(value=self.config.get('translation_mode', 'offline'))
         self._last_clipboard = ""
         
         self._setup_styles()
@@ -142,16 +149,40 @@ class ChineseTranslatorApp:
         """Toggle clipboard monitor"""
         self.config['clipboard_monitor'] = self.clipboard_monitor_var.get()
         self.save_config()
-        status = "✅" if self.clipboard_monitor_var.get() else "❌"
-        self._set_status(f"📋 Clipboard Monitor: {status}", 'accent')
+        status = "\u2705" if self.clipboard_monitor_var.get() else "\u274c"
+        self._set_status(t('clipboard_status').format(status), 'accent')
     
     def _toggle_quick_translate(self):
         """Toggle quick translate hotkey"""
         self.config['quick_translate'] = self.quick_translate_var.get()
         self.save_config()
-        status = "✅" if self.quick_translate_var.get() else "❌"
-        self._set_status(f"🎯 Quick Translate (Ctrl+Shift+V): {status}", 'accent')
+        status = "\u2705" if self.quick_translate_var.get() else "\u274c"
+        self._set_status(t('quick_translate_status').format(status), 'accent')
+
+    def _update_mode_button_text(self):
+        """Update mode button text based on current mode"""
+        if hasattr(self, 'mode_btn'):
+            mode = self.translation_mode_var.get()
+            self.mode_btn.config(text=t('mode_offline') if mode == 'offline' else t('mode_online'))
+
+    def _toggle_translation_mode(self):
+        """Toggle between offline (HF) and online (Google) translation"""
+        current = self.translation_mode_var.get()
+        new_mode = 'online' if current == 'offline' else 'offline'
+        self.translation_mode_var.set(new_mode)
+        self.config['translation_mode'] = new_mode
+        self.save_config()
+        self._update_mode_button_text()
         
+        mode_label = t('mode_offline') if new_mode == 'offline' else t('mode_online')
+        self._set_status(f"📡 {mode_label}", 'accent')
+        self._show_toast_notification(t('toast_mode_switched').format(new_mode.upper()), 'green')
+        
+        # Re-translate current input with the new mode
+        text = self.input_text.get('1.0', 'end').strip() if hasattr(self, 'input_text') else ''
+        if text:
+            self.root.after(200, self._on_translate)
+
     def load_config(self):
         import json
         import os
@@ -258,7 +289,7 @@ class ChineseTranslatorApp:
         self._show_results(results, is_online=False)
         
         # Update status and buttons
-        self._set_status(f"📜 Lịch sử: {self.history_index + 1}/{len(self.history)}", 'accent')
+        self._set_status(t('history_status', cur=self.history_index + 1, total=len(self.history)), 'accent')
         self._update_nav_buttons()
         
         # Reset flag after a short delay
@@ -294,7 +325,7 @@ class ChineseTranslatorApp:
         
         self.history_dialog = tk.Toplevel(self.root)
         dialog = self.history_dialog
-        dialog.title("📜 Lịch sử dịch")
+        dialog.title(t('history_title'))
         dialog.geometry("600x600")
         dialog.configure(bg=self.colors['bg'])
         dialog.attributes('-topmost', True)
@@ -315,7 +346,7 @@ class ChineseTranslatorApp:
         header_frame = ttk.Frame(dialog)
         header_frame.pack(fill='x', padx=10, pady=(10, 5))
         
-        header = ttk.Label(header_frame, text=f"📜 Lịch sử ({len(self.history)} bản dịch)",
+        header = ttk.Label(header_frame, text=t('history_header', count=len(self.history)),
                           font=('Segoe UI', 12, 'bold'))
         header.pack(side='left')
         
@@ -328,7 +359,7 @@ class ChineseTranslatorApp:
         search_entry.pack(side='left', fill='x', expand=True, padx=5)
         
         # Favorites filter toggle
-        fav_check = ttk.Checkbutton(search_frame, text="⭐ Chỉ yêu thích", variable=show_favorites_only)
+        fav_check = ttk.Checkbutton(search_frame, text=t('history_fav_filter'), variable=show_favorites_only)
         fav_check.pack(side='left', padx=5)
         
         # === Action Buttons ===
@@ -351,7 +382,7 @@ class ChineseTranslatorApp:
             to_delete = [idx for idx, var in check_vars.items() if var.get()]
             if not to_delete:
                 return
-            if not messagebox.askyesno("Xác nhận", f"Xóa {len(to_delete)} mục đã chọn?"):
+            if not messagebox.askyesno(t('confirm_title'), t('confirm_delete_n', n=len(to_delete))):
                 return
             for idx in sorted(to_delete, reverse=True):
                 if 0 <= idx < len(self.history):
@@ -366,14 +397,14 @@ class ChineseTranslatorApp:
             """Delete all history"""
             if not self.history:
                 return
-            if not messagebox.askyesno("Xác nhận", f"Xóa TOÀN BỘ {len(self.history)} lịch sử?"):
+            if not messagebox.askyesno(t('confirm_title'), t('confirm_delete_all', n=len(self.history))):
                 return
             self.history = []
             self.history_index = 0
             self.save_history()
             self._update_nav_buttons()
             dialog.destroy()
-            self._set_status("🗑️ Đã xóa toàn bộ lịch sử", 'green')
+            self._set_status(t('delete_all_done'), 'green')
         
         def select_all():
             """Toggle select all visible items"""
@@ -396,7 +427,7 @@ class ChineseTranslatorApp:
                 import json
                 with open(path, 'w', encoding='utf-8') as f:
                     json.dump(self.history, f, ensure_ascii=False, indent=2)
-                self._set_status(f"📤 Đã xuất {len(self.history)} mục", 'green')
+                self._set_status(t('export_done', n=len(self.history)), 'green')
         
         def import_history():
             """Import history from JSON file"""
@@ -419,19 +450,19 @@ class ChineseTranslatorApp:
                                 self.history.append(entry)
                                 new_count += 1
                         self.save_history()
-                        self._set_status(f"📥 Đã nhập {new_count} mục mới", 'green')
+                        self._set_status(t('import_done', n=new_count), 'green')
                         dialog.destroy()
                         self._open_history_list()
                 except Exception as e:
-                    messagebox.showerror("Lỗi", f"Không thể nhập: {e}")
+                    messagebox.showerror(t('confirm_title'), t('confirm_import_err', e=e))
         
         # Buttons row 1
-        ttk.Button(btn_frame, text="☑️ Chọn", command=select_all).pack(side='left', padx=2)
-        ttk.Button(btn_frame, text="🗑️ Xóa chọn", command=delete_selected).pack(side='left', padx=2)
-        ttk.Button(btn_frame, text="⚠️ Xóa hết", command=delete_all).pack(side='left', padx=2)
+        ttk.Button(btn_frame, text=t('history_select_all'), command=select_all).pack(side='left', padx=2)
+        ttk.Button(btn_frame, text=t('history_delete_sel'), command=delete_selected).pack(side='left', padx=2)
+        ttk.Button(btn_frame, text=t('history_delete_all'), command=delete_all).pack(side='left', padx=2)
         ttk.Separator(btn_frame, orient='vertical').pack(side='left', fill='y', padx=5)
-        ttk.Button(btn_frame, text="📤 Xuất", command=export_history).pack(side='left', padx=2)
-        ttk.Button(btn_frame, text="📥 Nhập", command=import_history).pack(side='left', padx=2)
+        ttk.Button(btn_frame, text=t('history_export'), command=export_history).pack(side='left', padx=2)
+        ttk.Button(btn_frame, text=t('history_import'), command=import_history).pack(side='left', padx=2)
         
         # === Scrollable List ===
         list_frame = ttk.Frame(dialog)
@@ -501,7 +532,7 @@ class ChineseTranslatorApp:
                 'vietnamese': entry.get('vietnamese', ''),
             }
             self._show_results(results, is_online=False)
-            self._set_status(f"📜 Lịch sử: {idx + 1}/{len(self.history)}", 'accent')
+            self._set_status(t('history_status', cur=idx + 1, total=len(self.history)), 'accent')
             self._update_nav_buttons()
             self.root.after(500, self._reset_nav_flag)
             dialog.destroy()
@@ -563,11 +594,11 @@ class ChineseTranslatorApp:
         
         # No history message
         if not self.history:
-            ttk.Label(scrollable, text="Chưa có lịch sử dịch",
+            ttk.Label(scrollable, text=t('history_empty'),
                      font=('Segoe UI', 11)).pack(pady=20)
         
         # Close button
-        ttk.Button(dialog, text="Đóng", command=dialog.destroy,
+        ttk.Button(dialog, text=t('history_close'), command=dialog.destroy,
                   style='Accent.TButton').pack(pady=10)
 
     def _apply_topmost_state(self):
@@ -614,7 +645,7 @@ class ChineseTranslatorApp:
             
             # Create popup
             popup = tk.Toplevel(self.root)
-            popup.title(f"📖 Từ điển: {char}")
+            popup.title(t('dict_title', char=char))
             popup.geometry("450x550")
             popup.configure(bg=self.colors['bg'])
             popup.attributes('-topmost', True)
@@ -667,23 +698,23 @@ class ChineseTranslatorApp:
             info_frame = ttk.Frame(header_frame)
             info_frame.pack(side='left', padx=20)
             
-            ttk.Label(info_frame, text=f"🔤 Pinyin: {pinyin}",
+            ttk.Label(info_frame, text=t('dict_pinyin', pinyin=pinyin),
                      font=('Segoe UI', 12, 'bold')).pack(anchor='w')
-            ttk.Label(info_frame, text=f"🇻🇳 Hán Việt: {hanviet}",
+            ttk.Label(info_frame, text=t('dict_hanviet', hanviet=hanviet),
                      font=('Segoe UI', 12, 'bold'),
                      foreground=self.colors['green']).pack(anchor='w')
             
             # === Radical Info (if available) ===
             if radical_info:
                 ttk.Separator(content, orient='horizontal').pack(fill='x', padx=15, pady=5)
-                ttk.Label(content, text=f"📐 Bộ thủ: {radical_info}",
+                ttk.Label(content, text=t('dict_radical', radical=radical_info),
                          font=('Segoe UI', 11)).pack(anchor='w', padx=15)
             
             # === Common Words (CLICKABLE) ===
             if common_words:
                 ttk.Separator(content, orient='horizontal').pack(fill='x', padx=15, pady=5)
                 
-                ttk.Label(content, text="📚 Từ ghép & Ví dụ (Click để dịch):",
+                ttk.Label(content, text=t('dict_words'),
                          font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=15, pady=(5, 3))
                 
                 words_frame = ttk.Frame(content)
@@ -716,7 +747,7 @@ class ChineseTranslatorApp:
             if example_sentences:
                 ttk.Separator(content, orient='horizontal').pack(fill='x', padx=15, pady=5)
                 
-                ttk.Label(content, text="💬 Câu ví dụ:",
+                ttk.Label(content, text=t('dict_examples'),
                          font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=15, pady=(5, 3))
                 
                 for cn, vn in example_sentences[:3]:
@@ -742,7 +773,7 @@ class ChineseTranslatorApp:
                              foreground=self.colors['fg']).pack(anchor='w')
             
             # === Close Button ===
-            ttk.Button(content, text="Đóng", command=popup.destroy,
+            ttk.Button(content, text=t('dict_close'), command=popup.destroy,
                       style='Accent.TButton').pack(pady=15)
             
             # === Event Handling ===
@@ -803,20 +834,46 @@ class ChineseTranslatorApp:
 
         self.settings_dialog = tk.Toplevel(self.root)
         dialog = self.settings_dialog
-        dialog.title("Cài đặt hiển thị")
-        dialog.geometry("350x450")
+        dialog.title(t('settings_title'))
+        dialog.geometry("350x550")
         dialog.configure(bg=self.colors['bg'])
-        # Force settings to be on top of the main window which might be topmost
-        dialog.attributes('-topmost', True) 
-        dialog.transient(self.root) # Keep it associated with root
+        dialog.attributes('-topmost', True)
+        dialog.transient(self.root)
 
-        # Center dialog
         x = self.root.winfo_x() + 50
         y = self.root.winfo_y() + 50
         dialog.geometry(f"+{x}+{y}")
         
+        # === Language Selection ===
+        ttk.Label(dialog, text=t('settings_lang_label'),
+                  font=('Segoe UI', 11, 'bold')).pack(pady=(15, 5))
+        
+        lang_var = tk.StringVar(value=self.config.get('app_language', 'vi'))
+        
+        lang_frame = ttk.Frame(dialog)
+        lang_frame.pack(anchor='w', padx=40, pady=2)
+        
+        def on_lang_change():
+            new_lang = lang_var.get()
+            self.config['app_language'] = new_lang
+            self.save_config()
+            set_language(new_lang)
+            self._apply_language()
+            self._show_toast_notification(t('toast_lang_changed'), 'green')
+            # Đóng và mở lại dialog để toàn bộ nhãn được refresh theo ngôn ngữ mới
+            dialog.destroy()
+            self.root.after(50, self._open_settings)
+        
+        ttk.Radiobutton(lang_frame, text='Tiếng Việt', variable=lang_var,
+                        value='vi', command=on_lang_change).pack(side='left', padx=(0, 15))
+        ttk.Radiobutton(lang_frame, text='English', variable=lang_var,
+                        value='en', command=on_lang_change).pack(side='left')
+
+        ttk.Separator(dialog, orient='horizontal').pack(fill='x', padx=20, pady=10)
+
         # === Script Selection ===
-        ttk.Label(dialog, text="Kiểu chữ Hán:", font=('Segoe UI', 11, 'bold')).pack(pady=(15, 5))
+        ttk.Label(dialog, text=t('settings_script_label'),
+                  font=('Segoe UI', 11, 'bold')).pack(pady=(5, 5))
         
         script_var = tk.StringVar(value=self.config.get('chinese_script', 'simplified'))
         
@@ -824,74 +881,64 @@ class ChineseTranslatorApp:
             self.config['chinese_script'] = script_var.get()
             self.save_config()
             
-        r1 = ttk.Radiobutton(dialog, text="Giản thể (Mặc định)", variable=script_var, 
-                            value='simplified', command=on_script_change)
-        r1.pack(anchor='w', padx=40, pady=2)
-        
-        r2 = ttk.Radiobutton(dialog, text="Phồn thể (Truyền thống)", variable=script_var, 
-                            value='traditional', command=on_script_change)
-        r2.pack(anchor='w', padx=40, pady=2)
+        ttk.Radiobutton(dialog, text=t('settings_simplified'), variable=script_var,
+                        value='simplified', command=on_script_change).pack(anchor='w', padx=40, pady=2)
+        ttk.Radiobutton(dialog, text=t('settings_traditional'), variable=script_var,
+                        value='traditional', command=on_script_change).pack(anchor='w', padx=40, pady=2)
 
-        ttk.Separator(dialog, orient='horizontal').pack(fill='x', padx=20, pady=15)
+        ttk.Separator(dialog, orient='horizontal').pack(fill='x', padx=20, pady=10)
 
         # === Visibility Selection ===
-        ttk.Label(dialog, text="Chọn dòng kết quả:", font=('Segoe UI', 11, 'bold')).pack(pady=5)
+        ttk.Label(dialog, text=t('settings_rows_label'),
+                  font=('Segoe UI', 11, 'bold')).pack(pady=5)
         
-        # Checkboxes mapping
         settings_map = [
-            ("Hán Tự", "show_chinese"),
-            ("Hán Việt", "show_hanviet"),
-            ("Pinyin", "show_pinyin"),
-            ("English", "show_english"),
-            ("Tiếng Việt", "show_vietnamese"),
+            (t('vis_chinese'),    'show_chinese'),
+            (t('vis_hanviet'),    'show_hanviet'),
+            (t('vis_pinyin'),     'show_pinyin'),
+            (t('vis_english'),    'show_english'),
+            (t('vis_vietnamese'), 'show_vietnamese'),
         ]
         
         vars_map = {}
-        
         for label, key in settings_map:
             var = tk.BooleanVar(value=self.config.get(key, True))
             vars_map[key] = var
-            cb = ttk.Checkbutton(dialog, text=label, variable=var)
-            cb.pack(anchor='w', padx=40, pady=5)
+            ttk.Checkbutton(dialog, text=label, variable=var).pack(anchor='w', padx=40, pady=5)
             
         def save_and_close():
-            # Update config
             changed = False
             for key, var in vars_map.items():
                 if self.config.get(key) != var.get():
                     self.config[key] = var.get()
                     changed = True
-            
             if changed:
                 self.save_config()
                 self._update_result_layout()
-                # Auto-translate if there's text
                 text = self.input_text.get('1.0', 'end').strip()
                 if text:
                     self.root.after(100, self._on_translate)
-                
             dialog.destroy()
             
-        ttk.Button(dialog, text="Đóng", command=save_and_close, style='Accent.TButton').pack(pady=20)
+        ttk.Button(dialog, text=t('btn_close'), command=save_and_close,
+                   style='Accent.TButton').pack(pady=15)
 
     def _update_result_layout(self):
-        """Rebuild result widgets based on config"""
-        # Clear existing widgets
+        """Rebuild result widgets based on config and current language"""
         for widget in self.scrollable_content.winfo_children():
             widget.destroy()
         
         self.result_widgets = {}
         
         full_configs = [
-            ('chinese', '🀄 Hán Tự:', self.colors['accent2'], 16),
-            ('hanviet', '🇻🇳 Hán Việt:', self.colors['green'], 13),
-            ('pinyin', '🔤 Pinyin:', self.colors['yellow'], 13),
-            ('english', '🇬🇧 English:', self.colors['accent'], 13),
-            ('vietnamese', '📝 Tiếng Việt:', self.colors['fg'], 13),
+            ('chinese',    t('row_chinese'),    self.colors['accent2'], 16),
+            ('hanviet',    t('row_hanviet'),    self.colors['green'],   13),
+            ('pinyin',     t('row_pinyin'),     self.colors['yellow'],  13),
+            ('english',    t('row_english'),    self.colors['accent'],  13),
+            ('vietnamese', t('row_vietnamese'), self.colors['fg'],      13),
         ]
         
         for key, label, color, font_size in full_configs:
-            # Config visibility
             config_key = f"show_{key}"
             if not self.config.get(config_key, True):
                 continue
@@ -915,7 +962,6 @@ class ChineseTranslatorApp:
             result_box.pack(side='left', fill='both', expand=True)
             result_box.config(state='disabled')
             
-            # Bind double-click for mini dictionary (Chinese/HanViet rows)
             if key in ['chinese', 'hanviet']:
                 result_box.bind('<Double-Button-1>', self._show_mini_dict)
             
@@ -925,82 +971,160 @@ class ChineseTranslatorApp:
         text = self.input_text.get('1.0', 'end').strip()
         if not text:
             if hasattr(self, 'status_label'):
-                self.status_label.config(text="⚠️ Vui lòng nhập nội dung", foreground=self.colors['yellow'])
+                self.status_label.config(text=t('status_empty'), foreground=self.colors['yellow'])
             return 'break'
-        
+
         if hasattr(self, 'status_label'):
-            self.status_label.config(text="⏳ Đang dịch...", foreground=self.colors['accent'])
+            self.status_label.config(text=t('status_translating'), foreground=self.colors['accent'])
         self.root.update()
-        
-        # Run translation in thread
+
+        # Run translation in thread based on selected mode
         def do_translate():
             try:
-                # Get all translations (Defaults to Chinese source)
-                results = translate_all(text)
-                
-                # Input original text first
-                raw_original = results.pop('original')
-                
-                # Convert script
-                from translator import convert_script
-                target_script = self.config.get('chinese_script', 'simplified')
-                final_original = convert_script(raw_original, target_script)
-                
-                results['chinese'] = final_original
-                
-                self.root.after(0, lambda: self._show_results(results, is_online=False))
-                self.root.after(0, lambda: self._set_status("✅ Dịch Offline xong!", 'green'))
-                
-                # Save to history
-                from datetime import datetime
-                entry = {
-                    "input": text,
-                    "chinese": results.get('chinese', ''),
-                    "hanviet": results.get('hanviet', ''),
-                    "pinyin": results.get('pinyin', ''),
-                    "english": results.get('english', ''),
-                    "vietnamese": results.get('vietnamese', ''),
-                    "timestamp": datetime.now().isoformat()
-                }
-                self.root.after(0, lambda e=entry: self.add_to_history(e))
-                
-                # Trigger Online update
-                self._update_online_translation(text)
-                
+                mode = self.translation_mode_var.get()
+                lang = detect_input_language(text)
+
+                # ── CHẾ ĐỘ DỊCH NGƯỢC: input không phải tiếng Trung → dịch sang Hán Tự ──
+                if lang != 'chinese':
+                    self.root.after(0, lambda: self._set_status(t('status_reverse_start'), 'accent'))
+                    reverse = translate_to_chinese(text)
+                    chinese_out = reverse.get('chinese', '')
+                    english_out = reverse.get('english', '')
+
+                    if not chinese_out:
+                        self.root.after(0, lambda: self._set_status(t('status_no_internet'), 'yellow'))
+                        if english_out:
+                            partial = {'chinese': '', 'hanviet': '', 'pinyin': '', 'english': english_out, 'vietnamese': ''}
+                            self.root.after(0, lambda p=partial: self._show_results(p, is_online=False))
+                        return
+
+                    # Lấy Pinyin + Hán Việt từ Hán tự kết quả
+                    pinyin_out  = get_pinyin(chinese_out)
+                    hanviet_out = get_hanviet(chinese_out)
+
+                    # Hiển thị partial ngay (Hán Tự, Hán Việt, Pinyin, English)
+                    partial_results = {
+                        'chinese':    chinese_out,
+                        'hanviet':    hanviet_out,
+                        'pinyin':     pinyin_out,
+                        'english':    english_out,
+                        'vietnamese': t('status_translating'),
+                    }
+                    self.root.after(0, lambda r=partial_results: self._show_results(r, is_online=False))
+
+                    # Dịch Hán Tự → Tiếng Việt (dùng engine tương ứng với mode)
+                    from translator import translate_online, get_translations, convert_script
+                    target_script = self.config.get('chinese_script', 'simplified')
+                    chinese_display = convert_script(chinese_out, target_script)
+
+                    if mode == 'online':
+                        vi_result = translate_online(chinese_out)
+                        vietnamese_out = vi_result.get('vietnamese', '')
+                    else:
+                        vi_offline = get_translations(chinese_out)
+                        vietnamese_out = vi_offline.get('vietnamese', '')
+
+                    results = {
+                        'chinese':    chinese_display,
+                        'hanviet':    hanviet_out,
+                        'pinyin':     pinyin_out,
+                        'english':    english_out,
+                        'vietnamese': vietnamese_out,
+                    }
+
+                    self.root.after(0, lambda r=results: self._show_results(r, is_online=False))
+                    self.root.after(0, lambda: self._set_status(t('status_done_reverse'), 'green'))
+
+                    from datetime import datetime
+                    entry = {
+                        "input":      text,
+                        "chinese":    chinese_display,
+                        "hanviet":    hanviet_out,
+                        "pinyin":     pinyin_out,
+                        "english":    english_out,
+                        "vietnamese": vietnamese_out,
+                        "timestamp":  datetime.now().isoformat()
+                    }
+                    self.root.after(0, lambda e=entry: self.add_to_history(e))
+                    return
+
+                # ── CHế ĐỘ THƯỜNG: input tiếng Trung ──
+                if mode == 'offline':
+                    # OFFLINE MODE: Use Hugging Face (direct zh→vi)
+                    results = translate_all(text)
+                    
+                    # Input original text first
+                    raw_original = results.pop('original')
+                    
+                    # Convert script
+                    from translator import convert_script
+                    target_script = self.config.get('chinese_script', 'simplified')
+                    final_original = convert_script(raw_original, target_script)
+                    
+                    results['chinese'] = final_original
+                    
+                    self.root.after(0, lambda: self._show_results(results, is_online=False))
+                    self.root.after(0, lambda: self._set_status(t('status_done_offline'), 'green'))
+                    
+                    # Save to history
+                    from datetime import datetime
+                    entry = {
+                        "input": text,
+                        "chinese": results.get('chinese', ''),
+                        "hanviet": results.get('hanviet', ''),
+                        "pinyin": results.get('pinyin', ''),
+                        "english": results.get('english', ''),
+                        "vietnamese": results.get('vietnamese', ''),
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    self.root.after(0, lambda e=entry: self.add_to_history(e))
+                    
+                else:
+                    # ONLINE MODE: Use Google Translate directly
+                    from translator import translate_online
+                    online_results = translate_online(text)
+                    
+                    # Get basic info (pinyin, hanviet) from offline
+                    hanviet = get_hanviet(text)
+                    pinyin = get_pinyin(text)
+                    
+                    # Convert script
+                    from translator import convert_script
+                    target_script = self.config.get('chinese_script', 'simplified')
+                    chinese_text = convert_script(text, target_script)
+                    
+                    results = {
+                        'chinese': chinese_text,
+                        'hanviet': hanviet,
+                        'pinyin': pinyin,
+                        'english': online_results.get('english', ''),
+                        'vietnamese': online_results.get('vietnamese', '')
+                    }
+                    
+                    # Truyền is_online=False để hiển thị ĐẦY ĐỦ tất cả dòng kết quả
+                    self.root.after(0, lambda: self._show_results(results, is_online=False))
+                    self.root.after(0, lambda: self._set_status(t('status_done_online'), 'green'))
+                    
+                    # Save to history
+                    from datetime import datetime
+                    entry = {
+                        "input": text,
+                        "chinese": results.get('chinese', ''),
+                        "hanviet": results.get('hanviet', ''),
+                        "pinyin": results.get('pinyin', ''),
+                        "english": results.get('english', ''),
+                        "vietnamese": results.get('vietnamese', ''),
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    self.root.after(0, lambda e=entry: self.add_to_history(e))
+
             except Exception as e:
                 self.root.after(0, lambda: self._set_status(f"❌ Lỗi: {e}", 'red'))
-        
+
         threading.Thread(target=do_translate, daemon=True).start()
         return 'break'
             
-    def _speak_chinese(self):
-        """Queue text for TTS worker"""
-        print("Speaker button clicked") # Debug
-        text = self.input_text.get('1.0', 'end').strip()
-        print(f"Input text found: '{text}'") # Debug
-        
-        if not text:
-             # Fallback to result if input empty (rare)
-             widget = self.result_widgets.get('chinese')
-             if widget:
-                 text = widget.get('1.0', 'end').strip()
-                 print(f"Fallback to result text: '{text}'") # Debug
-        
-        if text:
-            # Remove the "🌐" indicator if present in results
-            if text.startswith("🌐"):
-                text = text.replace("🌐", "").strip()
-            
-            print(f"Queueing TTS: {text}")
-            self._set_status(f"🔊 Đang đọc: {text[:10]}...", 'accent')
-            
-            # Clear queue to prioritize new speech
-            with self.tts_queue.mutex:
-                self.tts_queue.queue.clear()
-            self.tts_queue.put(text)
-        else:
-             print("No text to speak")
-             self._set_status("⚠️ Không có nội dung để đọc", 'yellow')
+
 
     def _setup_styles(self):
         style = ttk.Style()
@@ -1051,7 +1175,9 @@ class ChineseTranslatorApp:
         return 'break'
 
     def _on_key_release(self, event):
-        # Ignore modifier keys and navigation
+        # Ẩn/hiện nút dán ngay lập tức khi có thay đổi text
+        self._check_empty_state()
+        # Ignore modifier keys and navigation for auto-translate
         if getattr(event, 'keysym', '') in ['Shift_L', 'Shift_R', 'Control_L', 'Control_R', 'Alt_L', 'Alt_R', 'Up', 'Down', 'Left', 'Right', 'Return']:
             return
         self._schedule_auto_translate()
@@ -1107,7 +1233,15 @@ class ChineseTranslatorApp:
         try:
             content = self.input_text.get('1.0', 'end').strip()
             if not content:
-                self.paste_btn.place(relx=0.5, rely=0.5, anchor='center')
+                self.paste_btn.place(relx=0.0, rely=0.0, anchor='nw', x=5, y=5)
+                # Xóa toàn bộ kết quả khi input trống
+                if hasattr(self, 'result_widgets'):
+                    for widget in self.result_widgets.values():
+                        widget.config(state='normal')
+                        widget.delete('1.0', 'end')
+                        widget.config(height=1, state='disabled')
+                if hasattr(self, 'status_label'):
+                    self.status_label.config(text=t('status_ready'), foreground=self.colors['fg'])
             else:
                 self.paste_btn.place_forget()
         except:
@@ -1122,7 +1256,7 @@ class ChineseTranslatorApp:
         header_frame.pack(fill='x', pady=(0, 5))
         
         # Input Label
-        self.input_label = ttk.Label(header_frame, text="📝 Nhập Văn Bản", font=('Segoe UI', 11, 'bold'))
+        self.input_label = ttk.Label(header_frame, text=t('input_label'), font=('Segoe UI', 11, 'bold'))
         self.input_label.pack(side='left', padx=(0, 10))
         
         # Controls (Right side)
@@ -1141,11 +1275,17 @@ class ChineseTranslatorApp:
                                               command=self._toggle_clipboard_monitor)
         self.clipboard_check.pack(side='right', padx=5)
         
-        # Quick Translate Toggle  
+        # Quick Translate Toggle
         self.quick_check = ttk.Checkbutton(header_frame, text="🎯",
                                           variable=self.quick_translate_var,
                                           command=self._toggle_quick_translate)
         self.quick_check.pack(side='right', padx=5)
+
+        # Translation Mode Toggle (Offline/Online)
+        _init_mode_text = t('mode_online') if self.config.get('translation_mode') == 'online' else t('mode_offline')
+        self.mode_btn = ttk.Button(header_frame, text=_init_mode_text, width=10,
+                                   command=self._toggle_translation_mode)
+        self.mode_btn.pack(side='right', padx=5)
 
         # === INPUT SECTION ===
         input_container = ttk.Frame(main_frame)
@@ -1164,18 +1304,23 @@ class ChineseTranslatorApp:
         self.clear_input_btn = tk.Button(self.input_text, text="✖", font=('Segoe UI', 10),
                                          bg=self.colors['surface'], fg=self.colors['fg'],
                                          relief='flat', cursor='hand2', borderwidth=0,
-                                         command=lambda: [self.input_text.delete('1.0', 'end'), self._check_empty_state(), self._update_suggestions([], "")])
+                                         command=lambda: [self.input_text.delete('1.0', 'end'), self._check_empty_state(), self._update_suggestions([])])
         self.clear_input_btn.place(relx=1.0, rely=0.0, anchor='ne', x=-5, y=5)
         
         # Auto-translate feature
         self._auto_translate_id = None
         self.input_text.bind('<KeyRelease>', self._on_key_release)
 
-        # Paste Button (Centered) - Uses Subtle Style
-        self.paste_btn = ttk.Button(self.input_text, text="📋 Nhấp để Dán", 
-                                   command=self._force_paste_and_translate, style='Subtle.TButton')
-        # Show initially
-        self.paste_btn.place(relx=0.5, rely=0.5, anchor='center')
+        # Paste Button (Top-Left cố định) - cùng style với nút X
+        self.paste_btn = tk.Button(self.input_text, text="📋",
+                                   font=('Segoe UI', 15),
+                                   bg=self.colors['surface'], fg='#9399b2',
+                                   relief='flat', cursor='hand2', borderwidth=0,
+                                   command=self._force_paste_and_translate)
+        self.paste_btn.bind('<Enter>', lambda e: self.paste_btn.configure(fg=self.colors['fg']))
+        self.paste_btn.bind('<Leave>', lambda e: self.paste_btn.configure(fg='#9399b2'))
+        # Hiển thị ban đầu ở góc trên-trái cố định (giống nút X nhưng bên trái)
+        self.paste_btn.place(relx=0.0, rely=0.0, anchor='nw', x=5, y=5)
         
         # Speaker button (Floating inside Input Text - Bottom Right)
         self.speak_btn = ttk.Button(input_container, text="🔊", width=3,
@@ -1185,7 +1330,8 @@ class ChineseTranslatorApp:
         
         # Suggestions Frame (Gợi ý)
         self.suggestions_frame = ttk.Frame(main_frame)
-        ttk.Label(self.suggestions_frame, text="💡 Gợi ý:", font=('Segoe UI', 9, 'bold'), foreground=self.colors['yellow']).pack(side='left', padx=(0, 5))
+        self.suggestions_label = ttk.Label(self.suggestions_frame, text=t('suggestions_label'), font=('Segoe UI', 9, 'bold'), foreground=self.colors['yellow'])
+        self.suggestions_label.pack(side='left', padx=(0, 5))
         self.sugg_buttons = []
         for i in range(7):
             btn = tk.Button(self.suggestions_frame, text="", font=('Microsoft YaHei', 11),
@@ -1218,15 +1364,15 @@ class ChineseTranslatorApp:
         # Initial button state
         self._update_nav_buttons()
         
-        self.translate_btn = ttk.Button(self.action_frame, text="🔄 Dịch Ngay", 
+        self.translate_btn = ttk.Button(self.action_frame, text=t('btn_translate'),
                                         command=self._on_translate, style='Accent.TButton')
         self.translate_btn.pack(side='left', padx=(0, 10))
         
-        self.handwriting_btn = ttk.Button(self.action_frame, text="✍️ Viết Tay",
+        self.handwriting_btn = ttk.Button(self.action_frame, text=t('btn_handwriting'),
                                          command=self._open_handwriting)
         self.handwriting_btn.pack(side='left', padx=(0, 10))
         
-        self.capture_btn = ttk.Button(self.action_frame, text="📸 Alt+X: Chụp & Dịch",
+        self.capture_btn = ttk.Button(self.action_frame, text=t('btn_capture'),
                                      command=self._on_capture)
         self.capture_btn.pack(side='left')
         
@@ -1240,7 +1386,8 @@ class ChineseTranslatorApp:
             self.install_btn.pack(side='left', padx=10)
 
         # === OUTPUT SECTION ===
-        output_frame = ttk.LabelFrame(main_frame, text="📖 Kết Quả", padding=2)
+        self.result_frame = ttk.LabelFrame(main_frame, text=t('result_title'), padding=2)
+        output_frame = self.result_frame
         output_frame.pack(fill='both', expand=True, pady=(0, 10))
         
         # Canvas and Scrollbar for scrolling
@@ -1267,8 +1414,7 @@ class ChineseTranslatorApp:
         scrollbar.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
 
-        # Mousewheel scrolling
-        # Mousewheel scrolling
+        # Mousewheel scrolling (bind to canvas only, không dùng bind_all để tránh xung đột popup)
         def _on_mousewheel(event):
             try:
                 bbox = canvas.bbox("all")
@@ -1278,13 +1424,14 @@ class ChineseTranslatorApp:
             except:
                 pass
         
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        canvas.bind("<MouseWheel>", _on_mousewheel)
+        self.scrollable_content.bind("<MouseWheel>", _on_mousewheel)
         
         # Initialize result widgets based on config/layout
         self._update_result_layout()
         
         # === STATUS BAR ===
-        self.status_label = ttk.Label(main_frame, text="Sẵn sàng", 
+        self.status_label = ttk.Label(main_frame, text=t('status_ready'),
                                      font=('Segoe UI', 9))
         self.status_label.pack(fill='x', pady=(10, 0))
         
@@ -1308,15 +1455,68 @@ class ChineseTranslatorApp:
         self._check_empty_state()
         self._schedule_auto_translate()
         
+    def _apply_language(self):
+        """Update all static UI widgets to use the current language. Called when language changes."""
+        # Window title
+        self.root.title(t('app_title'))
+        # Input section label
+        if hasattr(self, 'input_label'):
+            self.input_label.config(text=t('input_label'))
+        # Translate button
+        if hasattr(self, 'translate_btn'):
+            self.translate_btn.config(text=t('btn_translate'))
+        # Handwriting button
+        if hasattr(self, 'handwriting_btn'):
+            self.handwriting_btn.config(text=t('btn_handwriting'))
+        # Capture button
+        if hasattr(self, 'capture_btn'):
+            self.capture_btn.config(text=t('btn_capture'))
+        # Mode button
+        self._update_mode_button_text()
+        # Result panel label
+        if hasattr(self, 'result_frame'):
+            try:
+                self.result_frame.config(text=t('result_title'))
+            except Exception:
+                pass
+        # Suggestions label
+        if hasattr(self, 'suggestions_label'):
+            self.suggestions_label.config(text=t('suggestions_label'))
+        # Rebuild result rows with new language labels
+        self._update_result_layout()
+        # Status bar
+        if hasattr(self, 'status_label'):
+            current = self.status_label.cget('text')
+            # Only reset if showing "ready"-like text
+            if not current.startswith(('✅', '❌', '⏳', '⚠️')):
+                self.status_label.config(text=t('status_ready'))
+
     def _open_handwriting(self):
-        HandwritingWindow(self.root, self.colors, self._insert_handwriting_char)
+        """Mở cửa sổ Viết Tay — tối đa 2 cửa sổ, sang bên cạnh UI chính"""
+        # Dọn danh sách: loại bỏ các cửa sổ đã đóng
+        if not hasattr(self, '_hw_windows'):
+            self._hw_windows = []
+        self._hw_windows = [w for w in self._hw_windows if w.window.winfo_exists()]
+
+        # Giới hạn tối đa 2 cửa sổ
+        if len(self._hw_windows) >= 2:
+            # Focus vào cửa sổ cuối cùng đang mở
+            self._hw_windows[-1].window.lift()
+            self._hw_windows[-1].window.focus_force()
+            return
+
+        # Mở cửa sổ mới với offset theo số cửa đang mở
+        offset = len(self._hw_windows)
+        hw = HandwritingWindow(self.root, self.colors, self._insert_handwriting_char,
+                               position_offset=offset)
+        self._hw_windows.append(hw)
 
     def _clear_input(self):
         """Clear input text"""
         self.input_text.delete('1.0', 'end')
         self._check_empty_state()
         if hasattr(self, 'status_label'):
-            self.status_label.config(text="Sẵn sàng")
+            self.status_label.config(text=t('status_ready'))
 
     def _copy_text(self, text):
         """Helper to copy text to clipboard"""
@@ -1452,17 +1652,7 @@ class ChineseTranslatorApp:
             except Exception as e:
                 print(f"TTS Loop Error: {e}")
 
-    def _on_input_change(self, event=None):
-        """Handle auto-translation with debounce"""
-        self._check_empty_state()
 
-        if event and event.keysym in ['Shift_L', 'Shift_R', 'Control_L', 'Control_R', 'Alt_L', 'Alt_R', 'Return']:
-            return
-            
-        if self.debounce_timer:
-            self.root.after_cancel(self.debounce_timer)
-        # Wait 800ms after last keystroke
-        self.debounce_timer = self.root.after(800, lambda: self._on_translate())
 
     def _speak_chinese(self):
         """Queue text for TTS worker"""
@@ -1479,14 +1669,14 @@ class ChineseTranslatorApp:
             if text.startswith("🌐"):
                 text = text.replace("🌐", "").strip()
             
-            self._set_status(f"🔊 Đang đọc: {text[:10]}...", 'accent')
+            self._set_status(t('tts_speaking', text=text[:10]), 'accent')
             
             # Clear queue to prioritize new speech
             with self.tts_queue.mutex:
                 self.tts_queue.queue.clear()
             self.tts_queue.put(text)
         else:
-            self._set_status("⚠️ Không có nội dung để đọc", 'yellow')
+            self._set_status(t('tts_no_content'), 'yellow')
 
     def _setup_hotkey(self):
         """Setup global hotkeys using 'keyboard' lib — works inside fullscreen games.
@@ -1540,11 +1730,11 @@ class ChineseTranslatorApp:
             self._show_window()
 
         menu = pystray.Menu(
-            pystray.MenuItem("Mở giao diện", show_app, default=True),
-            pystray.MenuItem("Thoát", quit_app)
+            pystray.MenuItem(t('tray_open'), show_app, default=True),
+            pystray.MenuItem(t('tray_quit'), quit_app)
         )
 
-        self.tray_icon = pystray.Icon("ChineseTranslator", image, "Dịch Tiếng Trung", menu)
+        self.tray_icon = pystray.Icon("ChineseTranslator", image, t('app_title'), menu)
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
     def _show_window(self):
@@ -1582,29 +1772,44 @@ class ChineseTranslatorApp:
 
 
 
-    def _update_online_translation(self, text):
-        """Fetch online translation and update UI"""
-        from translator import translate_online
+    def _show_toast_notification(self, message: str, color_key: str = 'green'):
+        """Show a temporary toast notification popup"""
+        # Check if there's already a toast visible
+        if hasattr(self, 'toast_label') and self.toast_label and self.toast_label.winfo_exists():
+            self.toast_label.destroy()
+
+        # Create toast label
+        self.toast_label = tk.Label(
+            self.root,
+            text=message,
+            font=('Segoe UI', 10, 'bold'),
+            bg=self.colors.get(color_key, self.colors['green']),
+            fg='#1e1e2e',
+            padx=15,
+            pady=8,
+            relief='raised',
+            borderwidth=2
+        )
         
-        def run_online():
-            try:
-                # Fetch online results
-                online_results = translate_online(text)
-                
-                # Update UI if we have results
-                if online_results['vietnamese'] or online_results['english']:
-                    self.root.after(0, lambda: self._show_results(online_results, is_online=True))
-                    self.root.after(0, lambda: self._set_status("✅ Đã cập nhật kết quả (Google)", 'green'))
-            except Exception as e:
-                print(f"Online update failed: {e}")
+        # Position at bottom-right of the window
+        self.toast_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
         
-        threading.Thread(target=run_online, daemon=True).start()
+        # Auto-hide after 3 seconds
+        def hide_toast():
+            if hasattr(self, 'toast_label') and self.toast_label:
+                try:
+                    self.toast_label.destroy()
+                except:
+                    pass
+                self.toast_label = None
+        
+        self.root.after(3000, hide_toast)
     
     def _on_capture(self):
         """Game-compatible screen capture: hides app first, freezes screen instantly,
         then shows overlay on frozen image for region selection.
         """
-        self._set_status("📸 Đang chuẩn bị chụp màn hình...", 'accent')
+        self._set_status(t('ocr_preparing'), 'accent')
 
         # Hide the app window so it doesn't appear in the screenshot
         self.root.withdraw()
@@ -1616,9 +1821,9 @@ class ChineseTranslatorApp:
                 self.root.after(0, self._show_window)
                 self.root.after(0, lambda: self._set_status(f"⚠️ {error}", 'yellow'))
                 return
-            if error and 'Đã hủy' in str(error):
+            if error and ('Đã hủy' in str(error) or 'cancelled' in str(error).lower()):
                 self.root.after(0, self._show_window)
-                self.root.after(0, lambda: self._set_status('Đã hủy chụp', 'fg'))
+                self.root.after(0, lambda: self._set_status(t('ocr_cancelled'), 'fg'))
                 return
 
             # Show window with results
@@ -1626,11 +1831,8 @@ class ChineseTranslatorApp:
 
             if error:
                 def show_err():
-                    self._set_status(f"⚠️ {error}", 'yellow')
-                    if 'Tesseract' in str(error):
-                        messagebox.showerror('Lỗi OCR', f"{error}\n\nVui lòng cài đặt Tesseract OCR.")
-                    else:
-                        messagebox.showwarning('Lỗi OCR', str(error))
+                    self._set_status(t('ocr_error', error), 'yellow')
+                    messagebox.showwarning(t('ocr_error_title'), str(error))
                 self.root.after(0, show_err)
                 return
 
@@ -1642,7 +1844,7 @@ class ChineseTranslatorApp:
                     self._on_translate()
                 self.root.after(0, on_success)
             else:
-                self.root.after(0, lambda: self._set_status('⚠️ Không tìm thấy văn bản', 'yellow'))
+                self.root.after(0, lambda: self._set_status(t('ocr_no_text'), 'yellow'))
 
         # Wait a short moment for the window to fully disappear before grabbing the screen
         def start_capture():
@@ -1662,10 +1864,11 @@ class ChineseTranslatorApp:
                         continue
                     if not text:
                         continue
-                        
+
                 display_text = text
-                # if is_online and text:
-                #    display_text = f"{text}"
+                # Add online indicator for better visibility
+                if is_online and text:
+                    display_text = f"🌐 {text}"
 
                 widget.config(state='normal')
                 widget.config(height=1) # Reset to calculate correctly
@@ -1693,7 +1896,7 @@ class ChineseTranslatorApp:
             if text:
                 self.root.clipboard_clear()
                 self.root.clipboard_append(text)
-                self._set_status(f"📋 Đã copy!", 'green')
+                self._set_status(t('status_copied'), 'green')
     
     def _set_status(self, text: str, color_key: str = 'fg'):
         """Update status bar"""
@@ -1702,10 +1905,10 @@ class ChineseTranslatorApp:
     
     def _install_rapidocr(self):
         """Install RapidOCR via pip"""
-        if not messagebox.askyesno("Cài đặt RapidOCR", "Bạn có muốn tải và cài đặt thư viện RapidOCR (khoảng 40MB) không?"):
+        if not messagebox.askyesno(t('install_rapidocr_title'), t('install_rapidocr_msg')):
             return
             
-        self._set_status("⏳ Đang cài đặt RapidOCR...", 'accent')
+        self._set_status(t('install_status_busy'), 'accent')
         self.root.update()
         
         def run_install():
@@ -1713,12 +1916,12 @@ class ChineseTranslatorApp:
             import sys
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "rapidocr-onnxruntime"])
-                self.root.after(0, lambda: messagebox.showinfo("Thành công", "Đã cài đặt RapidOCR! Vui lòng khởi động lại App."))
-                self.root.after(0, lambda: self.install_btn.pack_forget()) # Hide button
-                self.root.after(0, lambda: self._set_status("✅ Cài đặt xong! Hãy khởi động lại.", 'green'))
+                self.root.after(0, lambda: messagebox.showinfo(t('install_rapidocr_title'), t('install_rapidocr_done')))
+                self.root.after(0, lambda: self.install_btn.pack_forget())
+                self.root.after(0, lambda: self._set_status(t('install_status_ok'), 'green'))
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("Lỗi", f"Không thể cài đặt:\n{e}"))
-                self.root.after(0, lambda: self._set_status("❌ Cài đặt thất bại", 'red'))
+                self.root.after(0, lambda e=e: messagebox.showerror(t('confirm_title'), t('install_rapidocr_fail').format(e)))
+                self.root.after(0, lambda: self._set_status(t('install_status_fail'), 'red'))
                 
         threading.Thread(target=run_install, daemon=True).start()
 

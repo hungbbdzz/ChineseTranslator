@@ -1,27 +1,46 @@
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*"
-addopts = "-v --tb=short"
-asyncio_mode = "auto"
+# ─────────────────────────────────────────────────────────────────────────────
+#  pyproject.toml — Project metadata & tool configuration
+#  Chinese Translator v2.0
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Coverage settings
+[project]
+name            = "chinese-translator"
+version         = "2.0.0"
+description     = "Hybrid Chinese-to-Vietnamese/English desktop translator with OCR, TTS, and handwriting input"
+readme          = "README.md"
+license         = { file = "LICENSE" }
+authors         = [{ name = "hungbbdzz", url = "https://github.com/hungbbdzz" }]
+requires-python = ">=3.10"
+keywords        = ["chinese", "translation", "ocr", "tts", "vietnamese", "tkinter"]
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths   = ["tests"]
+python_files    = "test_*.py"
+python_classes  = "Test*"
+python_functions = "test_*"
+addopts     = "-v --tb=short --color=yes"
+asyncio_mode    = "auto"
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
 [tool.coverage.run]
 source = ["."]
 omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "*/build/*",
-    "*/dist/*",
-    "*/__pycache__/*",
-    "*/.venv/*",
-    "*/venv/*",
+    "tests/*",
+    "test_*.py",
+    "build/*",
+    "dist/*",
+    "__pycache__/*",
+    ".venv/*",
+    "venv/*",
     "build_exe.py",
-    "compat_patch.py"
+    "compat_patch.py",
+    "dict_data.py",          # Auto-generated DB — no coverage needed
 ]
 
 [tool.coverage.report]
+show_missing  = true
+skip_covered  = false
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -29,5 +48,5 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
-    "@abstractmethod"
+    "@abstractmethod",
 ]

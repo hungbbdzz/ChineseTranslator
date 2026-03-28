@@ -4,38 +4,49 @@ import threading
 import requests
 import time
 from logger_utils import get_logger
+from i18n import t
 
 # Set up logging
 logger = get_logger(__name__)
 
 class HandwritingWindow:
-    def __init__(self, parent, colors, on_char_selected):
+    def __init__(self, parent, colors, on_char_selected, position_offset=0):
         self.parent = parent
         self.colors = colors
         self.on_char_selected = on_char_selected
         
         self.window = tk.Toplevel(parent)
-        self.window.title("✍️ Viết Tay")
+        self.window.title(t('hw_title'))
         self.window.geometry("500x650")
         self.window.configure(bg=colors['bg'])
         self.window.attributes('-topmost', True)
         self.window.transient(parent)
         self.window.minsize(450, 600)
         
-        # Center the window relative to parent
+        # Mở sang bên PHẢI của UI chính, không đè lên
         try:
-            x = parent.winfo_x() + 50
-            y = parent.winfo_y() + 50
-            self.window.geometry(f"+{x}+{y}")
+            parent_x = parent.winfo_x()
+            parent_y = parent.winfo_y()
+            parent_w = parent.winfo_width()
+            screen_w = parent.winfo_screenwidth()
+            
+            # Đặt sang bên phải, nếu không đủ chỗ thì sang bên trái
+            win_w = 500
+            preferred_x = parent_x + parent_w + 10 + position_offset * (win_w + 10)
+            if preferred_x + win_w > screen_w:
+                preferred_x = max(0, parent_x - win_w - 10 - position_offset * (win_w + 10))
+            
+            self.window.geometry(f"+{preferred_x}+{parent_y}")
         except:
             pass
             
         self.strokes = []
         self.current_stroke = None
         
-        # We need to keep a list of canvas item IDs for each stroke to support undo
+        # Undo/Redo stacks: mỗi phần tử là (stroke_data, [canvas_item_ids])
         self.stroke_items = []
         self.current_stroke_items = []
+        self.redo_stack = []   # list of (stroke_data, [canvas_item_ids_snapshot])
         
         self._build_ui()
         self._bind_events()
@@ -50,7 +61,7 @@ class HandwritingWindow:
         # Header
         header_frame = ttk.Frame(main_frame)
         header_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(header_frame, text="Viết chữ Hán vào ô bên dưới:", 
+        ttk.Label(header_frame, text=t('hw_guide'),
                   font=('Segoe UI', 11, 'bold')).pack(side='left')
         
         # Canvas
@@ -66,15 +77,22 @@ class HandwritingWindow:
         # Draw a grid on canvas to help with writing
         self.canvas.bind('<Configure>', self._draw_grid)
         
-        # Clear/Undo buttons
+        # Undo / Redo / Clear buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=10)
         
-        ttk.Button(btn_frame, text="↩️ Hoàn tác", command=self.undo).pack(side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="🗑️ Xóa hết", command=self.clear).pack(side='left', padx=5)
+        self.undo_btn = ttk.Button(btn_frame, text=t('hw_undo'), command=self.undo, width=8)
+        self.undo_btn.pack(side='left', padx=(0, 5))
+        
+        self.redo_btn = ttk.Button(btn_frame, text=t('hw_redo'), command=self.redo, width=8)
+        self.redo_btn.pack(side='left', padx=5)
+        
+        ttk.Button(btn_frame, text=t('hw_clear'), command=self.clear).pack(side='left', padx=5)
+        
+        self._update_undo_redo_state()
         
         # Predictions container
-        ttk.Label(main_frame, text="Dự đoán (Cuộn chuột xem thêm - Click để chọn):", 
+        ttk.Label(main_frame, text=t('hw_predictions'),
                   font=('Segoe UI', 10)).pack(anchor='w', pady=(5, 5))
                   
         self.pred_canvas = tk.Canvas(main_frame, height=50, bg=self.colors['bg'], highlightthickness=0)
@@ -95,26 +113,29 @@ class HandwritingWindow:
                     self.pred_canvas.xview_scroll(int(-1*(event.delta/120)), "units")
             except:
                 pass
-            return "break" # Prevent propagation to global root bindings
+            return "break"
             
-        # Bind MouseWheel to window to capture all scroll events here
         self.window.bind("<MouseWheel>", _on_mousewheel)
         self.pred_canvas.bind("<MouseWheel>", _on_mousewheel)
         self.pred_inner.bind("<MouseWheel>", _on_mousewheel)
-        for btn in self.pred_buttons:
-            btn.bind("<MouseWheel>", _on_mousewheel)
             
         # Status
-        self.status_var = tk.StringVar(value="Sẵn sàng")
+        self.status_var = tk.StringVar(value=t('hw_ready'))
         ttk.Label(main_frame, textvariable=self.status_var, 
                   font=('Segoe UI', 9), foreground=self.colors['fg']).pack(anchor='w')
+
+    def _update_undo_redo_state(self):
+        """Cập nhật trạng thái enable/disable cho nút Lui và Tiến"""
+        if hasattr(self, 'undo_btn'):
+            self.undo_btn.config(state='normal' if self.strokes else 'disabled')
+        if hasattr(self, 'redo_btn'):
+            self.redo_btn.config(state='normal' if self.redo_stack else 'disabled')
 
     def _draw_grid(self, event=None):
         self.canvas.delete("grid")
         w = self.canvas.winfo_width()
         h = self.canvas.winfo_height()
         if w > 1 and h > 1:
-            # Draw cross
             self.canvas.create_line(w/2, 0, w/2, h, fill=self.colors['surface2'], dash=(4, 4), tags="grid")
             self.canvas.create_line(0, h/2, w, h/2, fill=self.colors['surface2'], dash=(4, 4), tags="grid")
 
@@ -132,11 +153,10 @@ class HandwritingWindow:
         self.canvas.bind("<ButtonRelease-1>", self._end_stroke)
         
     def _start_stroke(self, event):
-        self.current_stroke = [[], [], []] # x, y, time
+        self.current_stroke = [[], [], []]  # x, y, time
         self.current_stroke_items = []
         self._add_point(event.x, event.y)
         
-        # Cancel any pending recognition to save requests while drawing continuously
         if self._recognize_timer is not None:
             self.window.after_cancel(self._recognize_timer)
             self._recognize_timer = None
@@ -146,12 +166,9 @@ class HandwritingWindow:
             x, y = event.x, event.y
             w = self.canvas.winfo_width()
             h = self.canvas.winfo_height()
-            
-            # Clamp to canvas
             x = max(0, min(w, x))
             y = max(0, min(h, y))
             
-            # Draw line on canvas
             if len(self.current_stroke[0]) > 0:
                 last_x = self.current_stroke[0][-1]
                 last_y = self.current_stroke[1][-1]
@@ -165,15 +182,16 @@ class HandwritingWindow:
         if self.current_stroke and len(self.current_stroke[0]) > 1:
             self.strokes.append(self.current_stroke)
             self.stroke_items.append(self.current_stroke_items)
+            # Mỗi nét mới vẽ → xóa redo stack (hành vi chuẩn)
+            self.redo_stack.clear()
         elif self.current_stroke_items:
-            # Clean up single point clicks without movement
             for item in self.current_stroke_items:
                 self.canvas.delete(item)
                 
         self.current_stroke = None
         self.current_stroke_items = []
+        self._update_undo_redo_state()
         
-        # Debounce recognition
         if self._recognize_timer is not None:
             self.window.after_cancel(self._recognize_timer)
         self._recognize_timer = self.window.after(500, self._recognize)
@@ -181,33 +199,93 @@ class HandwritingWindow:
     def _add_point(self, x, y):
         self.current_stroke[0].append(x)
         self.current_stroke[1].append(y)
-        timestamp = int(time.time() * 1000)
-        self.current_stroke[2].append(timestamp)
+        self.current_stroke[2].append(int(time.time() * 1000))
         
     def clear(self):
+        """Xóa toàn bộ — lưu vào redo_stack để có thể phục hồi"""
+        if not self.strokes:
+            return
+        # Lưu trạng thái hiện tại vào redo_stack trước khi xóa
+        self.redo_stack.append(('CLEAR_SNAPSHOT', list(self.strokes), list(self.stroke_items)))
+        
         self.canvas.delete("all")
         self._draw_grid()
         self.strokes = []
         self.stroke_items = []
         self._update_predictions([])
-        self.status_var.set("Đã xóa")
+        self.status_var.set(t('hw_cleared'))
+        self._update_undo_redo_state()
         
         if self._recognize_timer is not None:
             self.window.after_cancel(self._recognize_timer)
             self._recognize_timer = None
         
     def undo(self):
-        if self.strokes and self.stroke_items:
-            # Delete canvas items for the last stroke
-            items_to_delete = self.stroke_items.pop()
-            for item in items_to_delete:
-                self.canvas.delete(item)
-                
-            self.strokes.pop()
-            
-            if self._recognize_timer is not None:
-                self.window.after_cancel(self._recognize_timer)
+        """Hoàn tác nét vẽ cuối (hoặc toàn bộ clear)"""
+        # Kiểm tra xem redo_stack có snapshot CLEAR không
+        # Nếu strokes rỗng nhưng redo_stack có CLEAR_SNAPSHOT → khôi phục từ đó
+        if not self.strokes:
+            return
+
+        # Lưu nét sắp bị undo vào redo_stack
+        stroke_data = self.strokes.pop()
+        items = self.stroke_items.pop()
+        self.redo_stack.append(('STROKE', stroke_data, items))
+
+        # Xóa các canvas item của nét đó
+        for item in items:
+            self.canvas.delete(item)
+
+        self._update_undo_redo_state()
+
+        if self._recognize_timer is not None:
+            self.window.after_cancel(self._recognize_timer)
+        if self.strokes:
             self._recognize_timer = self.window.after(300, self._recognize)
+        else:
+            self._update_predictions([])
+
+    def redo(self):
+        """Làm lại nét vừa hoàn tác"""
+        if not self.redo_stack:
+            return
+
+        entry = self.redo_stack.pop()
+
+        if entry[0] == 'STROKE':
+            _, stroke_data, old_items = entry
+            # Vẽ lại các line items
+            new_items = []
+            pts_x = stroke_data[0]
+            pts_y = stroke_data[1]
+            for i in range(1, len(pts_x)):
+                item_id = self.canvas.create_line(
+                    pts_x[i-1], pts_y[i-1], pts_x[i], pts_y[i],
+                    width=5, fill=self.colors['fg'],
+                    capstyle=tk.ROUND, joinstyle=tk.ROUND
+                )
+                new_items.append(item_id)
+            self.strokes.append(stroke_data)
+            self.stroke_items.append(new_items)
+
+        elif entry[0] == 'CLEAR_SNAPSHOT':
+            # Xóa lại toàn bộ (redo clear)
+            _, saved_strokes, saved_items = entry
+            self.canvas.delete("all")
+            self._draw_grid()
+            self.strokes = []
+            self.stroke_items = []
+            self._update_predictions([])
+            self.status_var.set(t('hw_cleared'))
+
+        self._update_undo_redo_state()
+
+        if self._recognize_timer is not None:
+            self.window.after_cancel(self._recognize_timer)
+        if self.strokes:
+            self._recognize_timer = self.window.after(300, self._recognize)
+        else:
+            self._update_predictions([])
             
     def _recognize(self):
         self._recognize_timer = None
@@ -216,9 +294,8 @@ class HandwritingWindow:
             self._update_predictions([])
             return
             
-        self.status_var.set("Đang nhận dạng...")
+        self.status_var.set(t('hw_recognizing'))
         
-        # Capture current strokes and canvas size for the thread
         strokes_data = list(self.strokes)
         cw = self.canvas.winfo_width()
         ch = self.canvas.winfo_height()
@@ -237,31 +314,29 @@ class HandwritingWindow:
                 }
 
                 resp = requests.post(url, headers=headers, json=payload, timeout=5)
-                resp.raise_for_status()  # Raise exception for HTTP errors
+                resp.raise_for_status()
                 data = resp.json()
 
                 if data[0] == "SUCCESS":
                     predictions = data[1][0][1]
-                    # Update UI in main thread
                     if self.window.winfo_exists():
                         self.window.after(0, self._update_predictions, predictions)
-                        self.window.after(0, self.status_var.set, "Đã nhận dạng")
+                        self.window.after(0, self.status_var.set, t('hw_recognized'))
                 else:
                     logger.warning(f"Handwriting recognition failed: {data}")
                     if self.window.winfo_exists():
-                        self.window.after(0, self.status_var.set, "Lỗi từ API")
+                        self.window.after(0, self.status_var.set, t('hw_api_error'))
             except requests.exceptions.Timeout:
-                logger.warning("Handwriting recognition timeout")
                 if self.window.winfo_exists():
-                    self.window.after(0, self.status_var.set, "Timeout")
+                    self.window.after(0, self.status_var.set, t('hw_timeout'))
             except requests.exceptions.RequestException as e:
                 logger.error(f"Handwriting recognition error: {e}")
                 if self.window.winfo_exists():
-                    self.window.after(0, self.status_var.set, "Lỗi kết nối")
+                    self.window.after(0, self.status_var.set, t('hw_conn_error'))
             except Exception as e:
                 logger.exception(f"Unexpected error in handwriting recognition: {e}")
                 if self.window.winfo_exists():
-                    self.window.after(0, self.status_var.set, "Lỗi")
+                    self.window.after(0, self.status_var.set, t('hw_error'))
                 
         threading.Thread(target=worker, daemon=True).start()
         
@@ -271,7 +346,6 @@ class HandwritingWindow:
             
         self.current_predictions = predictions
         
-        # Create buttons dynamically if needed
         while len(self.pred_buttons) < len(predictions):
             idx = len(self.pred_buttons)
             btn = tk.Button(self.pred_inner, font=('Microsoft YaHei', 16),
@@ -282,19 +356,16 @@ class HandwritingWindow:
             btn.bind('<Leave>', lambda e, b=btn: self._on_leave(b))
             self.pred_buttons.append(btn)
             
-        # Update text and visibility
         for i, btn in enumerate(self.pred_buttons):
             if i < len(predictions):
                 btn.config(text=predictions[i], state='normal', 
                           bg=self.colors['surface'], fg=self.colors['accent'])
-                from tkinter import Pack
                 if not btn.winfo_manager():
                     btn.pack(side='left', padx=3)
             else:
                 if btn.winfo_manager():
                     btn.pack_forget()
                     
-        # Update scroll region
         self.pred_canvas.update_idletasks()
         self.pred_canvas.configure(scrollregion=self.pred_canvas.bbox("all"))
                 
@@ -303,6 +374,5 @@ class HandwritingWindow:
             char = self.current_predictions[idx]
             if self.on_char_selected:
                 self.on_char_selected(char)
-            # Flash clear
             self.clear()
-            self.status_var.set(f"Đã thêm '{char}'")
+            self.status_var.set(t('hw_added', char=char))

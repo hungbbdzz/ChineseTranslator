@@ -1,52 +1,97 @@
-import PyInstaller.__main__
+"""
+build_exe.py — PyInstaller build script for ChineseTranslator
+=============================================================
+Usage:
+    pip install pyinstaller
+    python build_exe.py
+
+Output: dist/ChineseTranslator.exe
+"""
+
 import os
 import shutil
+import sys
+import PyInstaller.__main__
 
-# 1. Clean previous build
-if os.path.exists('dist'): shutil.rmtree('dist')
-if os.path.exists('build'): shutil.rmtree('build')
+# ── Configuration ──────────────────────────────────────────────────────────────
+APP_NAME   = "ChineseTranslator"
+ENTRY      = "ChineseTranslator.py"
+ICON       = None  # Set to "assets/icon.ico" if you have one
 
-# 2. Define data to include
-# Format: 'source;dest' (Windows)
-datas = [
-    ('data/hanviet_pinyin.csv', 'data'),
-    ('compat_patch.py', '.'),
-    # Note: Argos models are stored in user config, so we let app download them naturally
-    # or we could bundle them if paths were local.
+# Data files to bundle (source → destination inside the exe)
+DATAS = [
+    ("data/hanviet_pinyin.csv",  "data"),
+    ("data/sinov_readings.csv",  "data"),
+    ("compat_patch.py",          "."),
+    ("i18n.py",                  "."),
 ]
 
-# Convert datas to list of string arguments
-add_data_args = []
-for src, dst in datas:
-    add_data_args.append(f'--add-data={src};{dst}')
-
-# 3. Hidden imports required for argostranslate/pyinstaller logic
-hidden_imports = [
-    'argostranslate',
-    'argostranslate.translate',
-    'argostranslate.package',
-    'argostranslate.argospm',
-    'zhconv',
-    'pyttsx3.drivers',
-    'pyttsx3.drivers.sapi5',
+# Modules that PyInstaller cannot auto-detect
+HIDDEN_IMPORTS = [
+    # Transformers / HuggingFace
+    "transformers",
+    "transformers.models.nllb",
+    "sentencepiece",
+    # Chinese tools
+    "zhconv",
+    "pypinyin",
+    # TTS
+    "pyttsx3.drivers",
+    "pyttsx3.drivers.sapi5",
+    # OCR
+    "rapidocr_onnxruntime",
+    # Tray
+    "pystray",
+    "PIL._tkinter_finder",
 ]
 
-hidden_import_args = []
-for imp in hidden_imports:
-    hidden_import_args.append(f'--hidden-import={imp}')
+# ── Clean previous build ───────────────────────────────────────────────────────
+print("🧹 Cleaning previous build artifacts...")
+for folder in ("dist", "build", f"{APP_NAME}.spec"):
+    if os.path.exists(folder):
+        if os.path.isdir(folder):
+            shutil.rmtree(folder)
+        else:
+            os.remove(folder)
 
-# 4. Run PyInstaller
+# ── Assemble PyInstaller arguments ────────────────────────────────────────────
 args = [
-    'ChineseTranslator.py',
-    '--name=ChineseTranslator',
-    '--onefile',
-    '--windowed',  # No console window
-    '--clean',
-    *add_data_args,
-    *hidden_import_args,
+    ENTRY,
+    f"--name={APP_NAME}",
+    "--onefile",           # Single portable .exe
+    "--windowed",          # No console window
+    "--clean",             # Clean PyInstaller cache
+    "--noconfirm",         # Overwrite without prompting
 ]
 
-print("Building EXE with args:", args)
-PyInstaller.__main__.run(args)
+# Icon (optional)
+if ICON and os.path.exists(ICON):
+    args.append(f"--icon={ICON}")
 
-print("\n✅ Build completed! Check 'dist/ChineseTranslator.exe'")
+# Data files
+for src, dst in DATAS:
+    if os.path.exists(src):
+        args.append(f"--add-data={src};{dst}")
+    else:
+        print(f"  ⚠️  Skipping missing data: {src}")
+
+# Hidden imports
+for imp in HIDDEN_IMPORTS:
+    args.append(f"--hidden-import={imp}")
+
+# ── Run PyInstaller ────────────────────────────────────────────────────────────
+print(f"\n🔨 Building {APP_NAME}.exe...")
+print(f"   Entry: {ENTRY}")
+print(f"   Mode:  One-file, windowed (no console)\n")
+
+try:
+    PyInstaller.__main__.run(args)
+    exe_path = os.path.join("dist", f"{APP_NAME}.exe")
+    size_mb  = os.path.getsize(exe_path) / (1024 * 1024) if os.path.exists(exe_path) else 0
+    print(f"\n✅ Build complete!")
+    print(f"   Output : dist/{APP_NAME}.exe")
+    print(f"   Size   : {size_mb:.1f} MB")
+    print(f"\n💡 Tip: To create a Windows installer, compile installer_script.iss with Inno Setup.")
+except Exception as e:
+    print(f"\n❌ Build failed: {e}", file=sys.stderr)
+    sys.exit(1)

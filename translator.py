@@ -35,7 +35,7 @@ atexit.register(_cleanup_executor)
 
 # Lazy loading for heavy modules
 _pypinyin = None
-_argos_translator = None
+_hf_translator = None
 _init_lock = threading.Lock()
 
 def _get_pypinyin():
@@ -45,70 +45,37 @@ def _get_pypinyin():
         _pypinyin = pypinyin
     return _pypinyin
 
-def _ensure_package(from_code, to_code):
-    """Ensure specific Argos Translate package is installed"""
-    import argostranslate.package
-
-    # Check installed
-    installed = argostranslate.package.get_installed_packages()
-    if any(p.from_code == from_code and p.to_code == to_code for p in installed):
-        return True
-
-    logger.info(f"Package {from_code}->{to_code} not found. Installing...")
-
-    # Allow update index only if strictly necessary to avoid lag
-    try:
-        # Check available packages in current index first without updating?
-        # No, safest to update index if we are missing a package we intend to install
-        argostranslate.package.update_package_index()
-        available = argostranslate.package.get_available_packages()
-
-        target_pkg = next((p for p in available if p.from_code == from_code and p.to_code == to_code), None)
-
-        if target_pkg:
-            logger.info(f"Downloading {target_pkg.from_name} -> {target_pkg.to_name}...")
-            path = target_pkg.download()
-            argostranslate.package.install_from_path(path)
-            logger.info(f"Installed {from_code}->{to_code}")
-            return True
-        else:
-            logger.error(f"Error: Model {from_code}->{to_code} not found in repository.")
-            return False
-    except Exception as e:
-        logger.error(f"Error installing package {from_code}->{to_code}: {e}")
-        return False
-
-def _get_argos_translator(source_lang='zh'):
-    """Initialize Argos Translate with required models (thread-safe)"""
-    global _argos_translator
-
+def _get_hf_translator():
+    """Initialize Hugging Face Transformers model for Chinese -> Vietnamese translation (thread-safe)
+    
+    Uses Meta's NLLB (No Language Left Behind) - high-quality multilingual model.
+    Model: facebook/nllb-200-distilled-600M (~2.4GB, best quality for zh->vi)
+    """
+    global _hf_translator
+    
     with _init_lock:
         try:
-            import argostranslate.package
-            import argostranslate.translate
-
-            # Always ensure 'en' -> 'vi' as fallback chain
-            _ensure_package('en', 'vi')
-
-            # Determine source language code
-            if source_lang == 'chinese': code = 'zh'
-            elif source_lang == 'japanese': code = 'ja'
-            elif source_lang == 'korean': code = 'ko'
-            else: code = 'zh'
-
-            # Ensure source -> en (fallback chain)
-            if code != 'en':
-                _ensure_package(code, 'en')
-
-            # Improvement #4: also try to get a direct source -> vi package
-            if code not in ('en', 'vi'):
-                _ensure_package(code, 'vi')  # silent if not available in repo
-
-            _argos_translator = argostranslate.translate
-            return _argos_translator
-
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+            
+            if _hf_translator is None:
+                logger.info("Loading NLLB model: facebook/nllb-200-distilled-600M...")
+                
+                model_name = "facebook/nllb-200-distilled-600M"
+                tokenizer = AutoTokenizer.from_pretrained(model_name, src_lang="zho_Hans")
+                model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+                
+                _hf_translator = {
+                    'tokenizer': tokenizer,
+                    'model': model,
+                    'src_lang': 'zho_Hans',  # Chinese Simplified
+                    'tgt_lang': 'vie_Latn'   # Vietnamese
+                }
+                logger.info("NLLB model loaded successfully!")
+            
+            return _hf_translator
+            
         except Exception as e:
-            logger.exception(f"Argos Translate init error: {e}")
+            logger.exception(f"Hugging Face translator init error: {e}")
             return None
 
 class HanVietDict:
@@ -275,49 +242,81 @@ def get_translations(text: str, source_lang: str = 'chinese') -> dict:
     Translate text to English and Vietnamese.
     Returns dict: {'english': str, 'vietnamese': str}
 
-    Improvement #4: Tries a direct source->vi Argos package first (1 step).
-    Falls back to the classic source->en->vi chain if not available.
+    Uses NLLB for direct Chinese -> Vietnamese translation (highest quality).
+    English translation is handled separately by translate_online() using Google Translate.
     """
+    import torch
+
     results = {'english': '', 'vietnamese': ''}
-    
+
     if not text:
         return results
 
-    # Determine source code
-    if source_lang == 'chinese': src_code = 'zh'
-    elif source_lang == 'japanese': src_code = 'ja'
-    elif source_lang == 'korean': src_code = 'ko'
-    else: src_code = 'zh'
-
     try:
-        at = _get_argos_translator(source_lang)
-        if at:
-            # Check if a direct src->vi package is installed
-            import argostranslate.package
-            installed = argostranslate.package.get_installed_packages()
-            has_direct = any(
-                p.from_code == src_code and p.to_code == 'vi'
-                for p in installed
+        # Use NLLB for direct Chinese -> Vietnamese translation
+        hf_data = _get_hf_translator()
+        if hf_data:
+            tokenizer = hf_data['tokenizer']
+            model = hf_data['model']
+            src_lang = hf_data['src_lang']
+            tgt_lang = hf_data['tgt_lang']
+
+            # Tokenize with source language and target language hint
+            tokenizer.src_lang = src_lang
+            inputs = tokenizer(
+                text,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512
             )
-
-            if has_direct:
-                # One-step: source -> vi directly
-                vi_text = at.translate(text, src_code, 'vi')
-                # Also get English via the normal route
-                en_text = at.translate(text, src_code, 'en')
-                print(f"[Translate] Direct {src_code}->vi used")
+            input_length = inputs['input_ids'].shape[1]
+            
+            # Find the target language token in special tokens
+            vie_token = f"__{tgt_lang}__"
+            special_tokens = tokenizer.additional_special_tokens
+            if vie_token in special_tokens:
+                tgt_token_id = tokenizer.convert_tokens_to_ids(vie_token)
             else:
-                # Two-step fallback: source -> en -> vi
-                en_text = at.translate(text, src_code, 'en')
-                vi_text = at.translate(en_text, 'en', 'vi')
+                # Fallback: search for token containing 'vie'
+                vie_token = next((t for t in special_tokens if 'vie' in t), None)
+                if vie_token:
+                    tgt_token_id = tokenizer.convert_tokens_to_ids(vie_token)
+                else:
+                    tgt_token_id = None
 
-            results['english'] = en_text
-            results['vietnamese'] = vi_text
+            # Generate translation
+            with torch.no_grad():
+                if tgt_token_id:
+                    outputs = model.generate(
+                        **inputs,
+                        forced_bos_token_id=tgt_token_id,
+                        max_length=min(input_length * 3, 512),
+                        num_beams=5,
+                        length_penalty=2.0,
+                        early_stopping=False,
+                    )
+                else:
+                    # No target token found, generate without language forcing
+                    outputs = model.generate(
+                        **inputs,
+                        max_length=min(input_length * 3, 512),
+                        num_beams=5,
+                        length_penalty=2.0,
+                    )
+
+            # Decode result
+            vietnamese = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            results['vietnamese'] = vietnamese
+            logger.info(f"[Translate] NLLB Direct zh->vi used (input_tokens={input_length})")
+
+        # Note: English translation is handled separately by translate_online()
+        # which uses Google Translate API.
 
     except Exception as e:
-        results['english'] = f'(Error: {e})'
+        logger.exception(f"NLLB Translation error: {e}")
         results['vietnamese'] = f'(Error: {e})'
-        
+
     return results
 
 
@@ -325,9 +324,6 @@ def translate_online(text: str) -> dict:
     """
     Translate text using Google Translate API (Online).
     Returns dict: {'english': str, 'vietnamese': str}
-    
-    Improved: Uses googletrans library for better quality translations
-    with post-processing for more natural Vietnamese output.
     """
     results = {'english': '', 'vietnamese': ''}
 
@@ -335,106 +331,78 @@ def translate_online(text: str) -> dict:
         return results
 
     def _google_translate_v2(query, dest):
-        """Use googletrans library (better quality)"""
         try:
             from googletrans import Translator
             translator = Translator()
             result = translator.translate(query, dest=dest, src='zh-cn')
             return result.text
         except ImportError:
-            logger.warning("googletrans not installed, falling back to translate library")
             return None
         except Exception as e:
-            logger.warning(f"googletrans error: {e}")
+            logger.debug(f"googletrans error: {e}")
             return None
     
     def _translate_fallback(query, dest):
-        """Fallback to translate library"""
         try:
             from translate import Translator
             translator = Translator(to_lang=dest, from_lang='zh')
             return translator.translate(query)
+        except ImportError:
+            return None
         except Exception as e:
-            logger.warning(f"Translate library error ({dest}): {e}")
+            logger.debug(f"Translate library error ({dest}): {e}")
+            return None
+
+    def _deep_translator_fallback(query, dest):
+        try:
+            from deep_translator import GoogleTranslator
+            return GoogleTranslator(source='zh', target=dest).translate(query)
+        except Exception as e:
+            logger.debug(f"deep_translator error ({dest}): {e}")
             return None
 
     def _post_process_vietnamese(text):
-        """Post-process Vietnamese translation for better quality"""
-        if not text:
-            return text
-        
-        # Fix common translation issues
-        replacements = {
-            'Tôi là': 'Tôi là',
-            'rất tốt': 'rất tốt',
-            'cảm thấy': 'cảm thấy',
-            'làm việc': 'làm việc',
-            'học tập': 'học tập',
-            'người Trung Quốc': 'người Trung Quốc',
-            'tiếng Trung': 'tiếng Trung',
-            'ngày mai': 'ngày mai',
-            'hôm nay': 'hôm nay',
-            'xin chào': 'xin chào',
-            'tạm biệt': 'tạm biệt',
-            'cảm ơn': 'cảm ơn',
-            'đồng ý': 'đồng ý',
-            'không biết': 'không biết',
-            'có thể': 'có thể',
-            'muốn': 'muốn',
-            'thích': 'thích',
-            'đang': 'đang',
-            'đã': 'đã',
-            'sẽ': 'sẽ',
-        }
-        
-        # Apply replacements
+        if not text: return text
+        replacements = {'Tôi là': 'Tôi là', 'rất tốt': 'rất tốt'}
         processed = text
         for old, new in replacements.items():
             processed = processed.replace(old, new)
-        
-        # Fix spacing issues
-        processed = ' '.join(processed.split())
-        
-        return processed
+        return ' '.join(processed.split())
 
-    # Run EN and VI requests in parallel (cuts wait time in half)
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    
     def translate_task(lang):
-        if lang == 'en':
-            result = _google_translate_v2(text, 'en')
-            if not result:
-                result = _translate_fallback(text, 'en')
-            return result
-        else:  # vi
-            result = _google_translate_v2(text, 'vi')
-            if not result:
-                result = _translate_fallback(text, 'vi')
-            if result:
-                result = _post_process_vietnamese(result)
-            return result
+        result = _google_translate_v2(text, lang)
+        if not result:
+            result = _translate_fallback(text, lang)
+        if not result:
+            result = _deep_translator_fallback(text, lang)
+            
+        if lang == 'vi' and result:
+            result = _post_process_vietnamese(result)
+        return result
     
     try:
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            fut_en = pool.submit(translate_task, 'en')
-            fut_vi = pool.submit(translate_task, 'vi')
+        # submit to global executor to avoid blocking on local threadpool shutdown 
+        fut_en = _executor.submit(translate_task, 'en')
+        fut_vi = _executor.submit(translate_task, 'vi')
+        
+        en = None
+        vi = None
+        
+        try:
             en = fut_en.result(timeout=10)
+        except Exception as e:
+            logger.debug(f"Timeout or error getting EN translation: {e}")
+            
+        try:
             vi = fut_vi.result(timeout=10)
+        except Exception as e:
+            logger.debug(f"Timeout or error getting VI translation: {e}")
 
-        if en: 
-            results['english'] = en
-        if vi: 
-            results['vietnamese'] = vi
+        if en: results['english'] = en
+        if vi: results['vietnamese'] = vi
 
     except Exception as e:
-        logger.warning(f"Online translation failed: {e}")
-        # Try deep-translator as last resort
-        try:
-            from deep_translator import GoogleTranslator
-            results['english'] = GoogleTranslator(source='zh', target='en').translate(text)
-            results['vietnamese'] = GoogleTranslator(source='zh', target='vi').translate(text)
-        except Exception as fallback_error:
-            logger.error(f"All translation methods failed: {fallback_error}")
+        logger.error(f"All translation methods failed: {e}")
 
     return results
 
@@ -488,18 +456,115 @@ def translate_all(text: str) -> dict:
     return result
 
 
-def preload_resources():
-    """Pre-load all heavy resources in background for faster first translation."""
-    def _preload():
-        try:
-            _get_pypinyin()
-            _get_hanviet_dict()
-            _get_argos_translator()
-            print("All resources pre-loaded successfully!")
-        except Exception as e:
-            print(f"Preload error: {e}")
+def detect_input_language(text: str) -> str:
+    """
+    Detect if input text is Chinese or other language.
+    Returns: 'chinese' | 'other'
+    """
+    if not text:
+        return 'other'
     
-    threading.Thread(target=_preload, daemon=True).start()
+    chinese_count = sum(
+        1 for char in text
+        if '\u4e00' <= char <= '\u9fff'
+        or '\u3400' <= char <= '\u4dbf'  # CJK Extension A
+        or '\uf900' <= char <= '\ufaff'  # CJK Compatibility
+    )
+    
+    # Nếu > 30% ký tự là chữ Hán → coi là Chinese input
+    non_space = len([c for c in text if not c.isspace()])
+    if non_space == 0:
+        return 'other'
+    ratio = chinese_count / non_space
+    return 'chinese' if ratio >= 0.3 else 'other'
+
+
+def translate_to_chinese(text: str) -> dict:
+    """
+    Dịch văn bản (tiếng Việt/Anh/v.v.) sang tiếng Trung (Giản thể) và English.
+    Returns: {'chinese': str, 'english': str}
+    """
+    result = {'chinese': '', 'english': ''}
+    
+    if not text:
+        return result
+
+    def _to_chinese(query):
+        """Cố thử nhiều language code cho tiếng Trung giản thể"""
+        # googletrans v4 codes
+        for zh_code in ['zh-cn', 'zh-CN', 'zh']:
+            try:
+                from googletrans import Translator
+                t = Translator()
+                r = t.translate(query, dest=zh_code, src='auto')
+                if r and r.text:
+                    return r.text
+            except Exception:
+                pass
+        # deep_translator fallback
+        for zh_code in ['zh-CN', 'chinese (simplified)', 'zh']:
+            try:
+                from deep_translator import GoogleTranslator
+                r = GoogleTranslator(source='auto', target=zh_code).translate(query)
+                if r:
+                    return r
+            except Exception:
+                pass
+        return None
+
+    def _to_english(query):
+        try:
+            from googletrans import Translator
+            r = Translator().translate(query, dest='en', src='auto')
+            if r and r.text:
+                return r.text
+        except Exception:
+            pass
+        try:
+            from deep_translator import GoogleTranslator
+            return GoogleTranslator(source='auto', target='en').translate(query)
+        except Exception:
+            pass
+        return None
+
+    try:
+        fut_zh = _executor.submit(_to_chinese, text)
+        fut_en = _executor.submit(_to_english, text)
+
+        chinese = None
+        english = None
+        try:
+            chinese = fut_zh.result(timeout=12)
+        except Exception as e:
+            logger.debug(f"translate_to_chinese zh error: {e}")
+        try:
+            english = fut_en.result(timeout=10)
+        except Exception as e:
+            logger.debug(f"translate_to_chinese en error: {e}")
+
+        if chinese:
+            result['chinese'] = chinese
+        if english:
+            result['english'] = english
+    except Exception as e:
+        logger.error(f"translate_to_chinese error: {e}")
+
+    return result
+
+
+def preload_resources():
+
+    """Pre-load all heavy resources at startup (blocking, ensures model is ready)."""
+    try:
+        print("[Preload] Loading pypinyin...")
+        _get_pypinyin()
+        print("[Preload] Loading Han-Viet dictionary...")
+        _get_hanviet_dict()
+        print("[Preload] Loading NLLB translation model (this may take 1-2 minutes)...")
+        _get_hf_translator()
+        print("[Preload] ✅ All resources loaded successfully!")
+    except Exception as e:
+        print(f"[Preload] ❌ Error: {e}")
 
 
 # Quick test

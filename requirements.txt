@@ -1,21 +1,35 @@
-# Chinese Translator Dependencies
-pypinyin>=0.51.0
-argostranslate>=1.9.6
-Pillow>=9.0.0
-pystray>=0.19.0
-pyttsx3>=2.90
-keyboard>=0.13.5
-zhconv>=1.4.3
-rapidocr-onnxruntime>=1.3.0
+# Chinese Translator — Python Dependencies
+# Install with: pip install -r requirements.txt
+# Requires Python 3.10–3.12 (64-bit), Windows 10/11
 
-# TTS: Neural voices (edge-tts) + audio playback (pygame)
-edge-tts>=6.1.9
-pygame>=2.5.0
+# ── Core GUI & System ──────────────────────────────────────────────────────────
+Pillow>=9.0.0                  # Image processing for OCR preprocessing
+pystray>=0.19.0                # System tray icon support
+keyboard>=0.13.5               # Global hotkey registration (Alt+X, Ctrl+Shift+V)
 
-# Online Translation Fallback (Better than deep-translator)
-translate>=1.5.5
-googletrans==4.0.0-rc1
+# ── Chinese Language Tools ─────────────────────────────────────────────────────
+pypinyin>=0.51.0               # Chinese → Pinyin romanization
+zhconv>=1.4.3                  # Simplified ↔ Traditional Chinese conversion
 
-# Testing (Optional - install only for development)
+# ── OCR ───────────────────────────────────────────────────────────────────────
+rapidocr-onnxruntime>=1.3.0   # Lightweight ONNX-based Chinese OCR (optional, in-app install)
+
+# ── Offline Translation (HuggingFace NLLB) ────────────────────────────────────
+# Meta's No Language Left Behind — high quality zh→vi offline model (~2.4 GB download)
+transformers>=4.35.0
+torch>=2.0.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+
+# ── Online Translation Fallback ────────────────────────────────────────────────
+googletrans==4.0.0-rc1         # Google Translate API (free, unofficial)
+translate>=1.5.5               # Fallback translator
+
+# ── Text-to-Speech ────────────────────────────────────────────────────────────
+edge-tts>=6.1.9                # Microsoft Edge Neural TTS (online, high quality)
+pyttsx3>=2.90                  # Windows SAPI5 offline TTS fallback
+
+# ── Dev / Testing (optional) ──────────────────────────────────────────────────
+# Uncomment to enable test suite:
 # pytest>=7.0.0
 # pytest-cov>=4.0.0
