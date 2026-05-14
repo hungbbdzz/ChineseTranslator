@@ -3,7 +3,7 @@
 # 📖 Chinese Translator
 
 **A powerful, hybrid Chinese translation desktop app for Windows**
-*Translate Chinese to Vietnamese & English — offline-first, online, or fully local with Google Gemma AI. Includes smart OCR, handwriting input, and neural TTS.*
+*Translate Chinese to Vietnamese & English — offline-first, with smart OCR, handwriting input, and neural TTS.*
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative)](LICENSE)
@@ -24,7 +24,7 @@
 | 🀄 **5-Row Deep Translation** | Displays **Chinese · Sino-Vietnamese · Pinyin · English · Vietnamese** simultaneously |
 | 📸 **Screen Capture OCR** | Press `Alt+X` anywhere (including fullscreen games) to freeze & crop any text |
 | 🌐 **Hybrid Translation** | Instant offline result via HuggingFace NLLB, then seamlessly updated by Google Translate |
-| 🤖 **Translation Mode Selector** | Switch between **Online** (Google), **Offline** (NLLB), or **Local AI** (Google Gemma) with one click |
+| 🤖 **Translation Mode Selector** | One-click button in toolbar to switch between **Online** (Google), **Offline** (NLLB), or **Local AI** (Google Gemma) |
 | ✍️ **Handwriting Pad** | Draw Chinese strokes with mouse — powered by Google Handwriting API |
 | 💡 **Smart Suggestions** | Context-aware word predictions based on 10 real-life scenarios (shopping, travel, greetings…) |
 | ⏱️ **Auto-Translate** | Automatically translates 2 seconds after you stop typing |
@@ -94,21 +94,13 @@ User Input / Alt+X Hotkey
  ┌──────────────────────────────────────────┐
  │         Translation Pipeline             │
  │                                          │
- │  [Mode Selector Button in Toolbar]       │
- │    🌐 Online  │  💾 Offline  │  🤖 Local │
+ │  Thread 1 (Instant):                     │
+ │  • dict_data → Pinyin + Sino-Viet        │
+ │  • HuggingFace NLLB → Vietnamese (fast)  │
  │                                          │
- │  ── Online Mode ──────────────────────   │
+ │  Thread 2 (Background):                  │
  │  • Google Translate API → high-accuracy  │
  │    Vietnamese & English (updates UI 🌐)  │
- │                                          │
- │  ── Offline Mode ─────────────────────   │
- │  • HuggingFace NLLB → Vietnamese (fast)  │
- │  • dict_data → Pinyin + Sino-Viet        │
- │                                          │
- │  ── Local AI Mode (Gemma) ────────────   │
- │  • Google Gemma (runs 100% on device)    │
- │  • No internet required after download   │
- │  • Best privacy, GPU/CPU accelerated     │
  └──────────────────────────────────────────┘
         │
         ▼
@@ -164,43 +156,8 @@ The app auto-generates `config.json` on first run. You can edit it manually or u
 | `clipboard_monitor` | bool | `false` | Auto-translate copied Asian text |
 | `quick_translate` | bool | `true` | Enable `Ctrl+Shift+V` hotkey |
 | `translation_mode` | string | `"offline"` | `"offline"` (NLLB), `"online"` (Google), or `"local"` (Gemma) |
-| `gemma_model` | string | `"gemma-3-1b-it"` | Gemma model variant for local AI mode (e.g. `"gemma-3-4b-it"`) |
 | `app_language` | string | `"vi"` | UI language: `"vi"` or `"en"` |
 | `chinese_script` | string | `"simplified"` | `"simplified"` or `"traditional"` |
-
----
-
-## 🤖 Translation Mode Selector
-
-The toolbar now features a **Translation Mode** button that lets you switch between three engines in one click — no need to restart the app.
-
-| Mode | Icon | Engine | Internet | RAM Usage | Best For |
-|---|---|---|---|---|---|
-| **Online** | 🌐 | Google Translate API | ✅ Required | Low | Highest accuracy, real-time |
-| **Offline** | 💾 | HuggingFace NLLB-200 | ❌ None | ~1.5 GB | Air-gapped / travel |
-| **Local AI** | 🤖 | Google Gemma (on-device) | ❌ None | 2–8 GB | Privacy, no API limits |
-
-### Setting Up Local Gemma Mode
-
-Local mode runs **Google Gemma** entirely on your machine using `llama-cpp-python` or the `transformers` library:
-
-```bash
-# Install the local inference backend
-pip install llama-cpp-python
-# OR (for GPU/transformers path)
-pip install transformers accelerate bitsandbytes
-```
-
-On first switch to **Local AI** mode, the app will prompt you to download the selected Gemma model (GGUF format). Models are cached in `~/.cache/huggingface/` and reused across sessions.
-
-> [!TIP]
-> Recommended models by hardware:
-> - **Low VRAM / CPU only**: `gemma-3-1b-it` (~700 MB)
-> - **Mid-range GPU (6–8 GB VRAM)**: `gemma-3-4b-it` (~2.5 GB)
-> - **High-end GPU (12+ GB VRAM)**: `gemma-3-12b-it` (~7 GB)
-
-> [!NOTE]
-> The `gemma_model` key in `config.json` persists your last-used model. You can also change it from the **Settings (⚙️)** dialog.
 
 ---
 
